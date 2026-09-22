@@ -1,0 +1,134 @@
+# Visual Language — Design Tokens
+# Single source of truth for all Physical AI workflow diagrams.
+# Used by build.py to inject consistent styles into SVGs.
+
+canvas:
+  width: 1400
+  height: 920
+  background: "#f8f9fb"
+  font_family: "'Helvetica Neue', Arial, sans-serif"
+
+typography:
+  title:
+    size: 20
+    weight: bold
+    color: "#2c3e50"
+  subtitle:
+    size: 12
+    color: "#7f8c8d"
+  block_name:
+    size: 15
+    weight: bold
+    color: "#2c3e50"
+  block_description:
+    size: 10
+    color: "#5a6a7a"
+  block_note:
+    size: 9
+    color: "#8fa4b8"
+  data_label:
+    size: 9
+    weight: bold
+    color: "#3a5068"
+  data_detail:
+    size: 7.5
+    color: "#7f8c8d"
+  arrow_label:
+    size: 8
+    color: "#5a6a7a"
+
+markers:
+  arrowhead:
+    width: 8
+    height: 5.6
+    ref_x: 7.2
+    ref_y: 2.8
+
+blocks:
+  rx: 10
+  stroke_width: 1.5
+  stroke_width_emphasis: 2
+  gradient:
+    top: { color: "#e8edf2", opacity: 1 }
+    bottom: { color: "#d5dce6", opacity: 1 }
+  divider:
+    color: "#b0bec5"
+    opacity: 0.5
+
+data_boxes:
+  rx: 4
+  fill: "#ffffff"
+  stroke: "#c5cdd6"
+  stroke_width: 0.8
+
+arrows:
+  default:
+    color: "#5a6a7a"
+    width: 1.8
+  secondary:
+    color: "#5a6a7a"
+    width: 1.2
+    dasharray: "5,3"
+  feedback:
+    color: "#5a6a7a"
+    width: 1.8
+    dasharray: "8,4"
+  gap:
+    color: "#c0392b"
+    width: 2
+    dasharray: "6,3"
+  standard:
+    color: "#27ae60"
+    width: 2
+  convention:
+    color: "#e67e22"
+    width: 2
+
+# Ecosystem colors (for diagram 3: community/ecosystem view)
+ecosystems:
+  huggingface:
+    color: "#ff9d00"
+    label: "HuggingFace / LeRobot"
+  ros:
+    color: "#2267a0"
+    label: "ROS / Open Robotics"
+  nvidia:
+    color: "#76b900"
+    label: "NVIDIA"
+  openpi:
+    color: "#8b5cf6"
+    label: "Physical Intelligence"
+  redhat:
+    color: "#ee0000"
+    label: "Red Hat / RHOAI"
+  none:
+    color: "#95a5a6"
+    label: "No standard (manual)"
+
+# Gap/validation status colors (for annotated views)
+status:
+  established:
+    color: "#27ae60"
+    label: "Established standard"
+  convention:
+    color: "#e67e22"
+    label: "De facto convention"
+  gap:
+    color: "#c0392b"
+    label: "No standard (gap)"
+  partial:
+    color: "#f39c12"
+    label: "Partial validation"
+
+# Interface annotation boxes
+annotations:
+  format_box:
+    fill: "#fff3cd"
+    stroke: "#f39c12"
+    stroke_width: 1
+    rx: 3
+  gap_box:
+    fill: "#f8d7da"
+    stroke: "#c0392b"
+    stroke_width: 0.5
+    rx: 2

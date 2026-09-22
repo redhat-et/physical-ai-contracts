@@ -1,0 +1,423 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1140" font-family="'Helvetica Neue', Arial, sans-serif">
+  <defs>
+<!-- SHARED-DEFS-START -->
+<!-- Shared <defs> block for Physical AI workflow diagrams.
+     Injected by build.py into each SVG's <defs> element. -->
+
+<!-- Arrowhead markers — sized from tokens.yaml -->
+<marker id="arrow" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#5a6a7a"/>
+</marker>
+<marker id="arrow-gap" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#c0392b"/>
+</marker>
+<marker id="arrow-standard" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#27ae60"/>
+</marker>
+<marker id="arrow-convention" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#e67e22"/>
+</marker>
+
+<!-- Ecosystem-colored arrows (diagram 3) -->
+<marker id="arrow-huggingface" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#ff9d00"/>
+</marker>
+<marker id="arrow-ros" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#2267a0"/>
+</marker>
+<marker id="arrow-nvidia" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#76b900"/>
+</marker>
+<marker id="arrow-openpi" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#8b5cf6"/>
+</marker>
+<marker id="arrow-redhat" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#ee0000"/>
+</marker>
+<marker id="arrow-none" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#95a5a6"/>
+</marker>
+
+<!-- Block gradient -->
+<linearGradient id="block-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" style="stop-color:#e8edf2;stop-opacity:1"/>
+  <stop offset="100%" style="stop-color:#d5dce6;stop-opacity:1"/>
+</linearGradient>
+<!-- SHARED-DEFS-END -->
+</defs>
+<!-- SHARED-STYLE-START -->
+<style><![CDATA[
+/* Physical AI Diagrams — Shared CSS Classes
+   Embedded into each SVG's <style> block by build.py.
+   Edit here, rebuild to propagate. */
+
+/* --- Typography --- */
+.title { font-size: 20px; font-weight: bold; fill: #2c3e50; }
+.subtitle { font-size: 12px; fill: #7f8c8d; }
+.block-name { font-size: 15px; font-weight: bold; fill: #2c3e50; }
+.block-desc { font-size: 10px; fill: #5a6a7a; }
+.block-note { font-size: 9px; fill: #8fa4b8; }
+.data-label { font-size: 9px; font-weight: bold; fill: #3a5068; }
+.data-detail { font-size: 7.5px; fill: #7f8c8d; }
+.arrow-label { font-size: 8px; fill: #5a6a7a; }
+.annotation-title { font-size: 8px; font-weight: bold; fill: #856404; }
+.annotation-text { font-size: 7px; fill: #856404; }
+.gap-text { font-size: 7px; fill: #c0392b; }
+
+/* --- Blocks --- */
+.block { rx: 10; stroke-width: 1.5; }
+.block-emphasis { rx: 10; stroke-width: 2; }
+.block-divider { stroke: #b0bec5; stroke-opacity: 0.5; }
+
+/* --- Data object boxes --- */
+.data-box { fill: #fff; stroke: #c5cdd6; stroke-width: 0.8; rx: 4; }
+
+/* --- Arrows --- */
+.arrow-default { stroke: #5a6a7a; stroke-width: 1.8; fill: none; }
+.arrow-secondary { stroke: #5a6a7a; stroke-width: 1.2; stroke-dasharray: 5,3; fill: none; }
+.arrow-feedback { stroke: #5a6a7a; stroke-width: 1.8; stroke-dasharray: 8,4; fill: none; }
+.arrow-gap { stroke: #c0392b; stroke-width: 2; stroke-dasharray: 6,3; fill: none; }
+.arrow-standard { stroke: #27ae60; stroke-width: 2; fill: none; }
+.arrow-convention { stroke: #e67e22; stroke-width: 2; fill: none; }
+
+/* --- Ecosystem colors (diagram 3) --- */
+.eco-huggingface { stroke: #ff9d00; fill: none; }
+.eco-ros { stroke: #2267a0; fill: none; }
+.eco-nvidia { stroke: #76b900; fill: none; }
+.eco-openpi { stroke: #8b5cf6; fill: none; }
+.eco-redhat { stroke: #ee0000; fill: none; }
+.eco-none { stroke: #95a5a6; fill: none; }
+
+.eco-huggingface-fill { fill: #ff9d00; }
+.eco-ros-fill { fill: #2267a0; }
+.eco-nvidia-fill { fill: #76b900; }
+.eco-openpi-fill { fill: #8b5cf6; }
+.eco-redhat-fill { fill: #ee0000; }
+.eco-none-fill { fill: #95a5a6; }
+
+/* --- Annotation boxes --- */
+.format-box { fill: #fff3cd; stroke: #f39c12; stroke-width: 1; rx: 3; }
+.gap-box { fill: #f8d7da; stroke: #c0392b; stroke-width: 0.5; rx: 2; }
+
+/* --- Legend --- */
+.legend-label { font-size: 10px; fill: #555; }
+.legend-title { font-size: 11px; font-weight: bold; fill: #2c3e50; }
+]]></style>
+<!-- SHARED-STYLE-END -->
+
+  <rect width="1200" height="1140" fill="#f8f9fb"/>
+
+  <!-- Title -->
+  <text x="600" y="38" text-anchor="middle" font-size="20" font-weight="bold" fill="#2c3e50">Physical AI Inference Stack</text>
+  <text x="600" y="58" text-anchor="middle" font-size="12" fill="#7f8c8d">Data flow from model to hardware — semantic metadata gaps at each interface</text>
+
+  <!-- ============================================ -->
+  <!-- ROW 1: Asset Stores + Model Registry         -->
+  <!-- All symmetric around x=600                   -->
+  <!-- ============================================ -->
+
+  <!-- Robot Asset Store (left, center=170) -->
+  <g transform="translate(60, 90)">
+    <rect width="220" height="75" rx="10" fill="url(#block-grad)" stroke="#8fa4b8" stroke-width="1.5"/>
+    <text x="110" y="22" text-anchor="middle" font-size="14" font-weight="bold" fill="#2c3e50">Robot Asset Store</text>
+    <line x1="15" y1="31" x2="205" y2="31" stroke="#b0bec5" stroke-opacity="0.5"/>
+    <text x="110" y="47" text-anchor="middle" font-size="9" fill="#5a6a7a">Robot descriptions, kinematics,</text>
+    <text x="110" y="59" text-anchor="middle" font-size="9" fill="#5a6a7a">sensor configs, camera mounts</text>
+    <text x="110" y="71" text-anchor="middle" font-size="8" fill="#8fa4b8">URDF / MJCF / USD</text>
+  </g>
+
+  <!-- Model Registry (center=600) -->
+  <g transform="translate(490, 90)">
+    <rect width="220" height="75" rx="10" fill="url(#block-grad)" stroke="#8fa4b8" stroke-width="1.5"/>
+    <text x="110" y="22" text-anchor="middle" font-size="14" font-weight="bold" fill="#2c3e50">Model Registry</text>
+    <line x1="15" y1="31" x2="205" y2="31" stroke="#b0bec5" stroke-opacity="0.5"/>
+    <text x="110" y="47" text-anchor="middle" font-size="9" fill="#5a6a7a">Versioned checkpoints</text>
+    <text x="110" y="59" text-anchor="middle" font-size="9" fill="#5a6a7a">with metadata</text>
+    <text x="110" y="71" text-anchor="middle" font-size="8" fill="#8fa4b8">SafeTensors + config.json</text>
+  </g>
+
+  <!-- Env Asset Store (right, center=1030) -->
+  <g transform="translate(920, 90)">
+    <rect width="220" height="75" rx="10" fill="url(#block-grad)" stroke="#8fa4b8" stroke-width="1.5"/>
+    <text x="110" y="22" text-anchor="middle" font-size="14" font-weight="bold" fill="#2c3e50">Env Asset Store</text>
+    <line x1="15" y1="31" x2="205" y2="31" stroke="#b0bec5" stroke-opacity="0.5"/>
+    <text x="110" y="47" text-anchor="middle" font-size="9" fill="#5a6a7a">Environment scenes, world</text>
+    <text x="110" y="59" text-anchor="middle" font-size="9" fill="#5a6a7a">cameras, physics properties</text>
+    <text x="110" y="71" text-anchor="middle" font-size="8" fill="#8fa4b8">OpenUSD / SimReady</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- Arrow: Model Registry -> Policy Engine       -->
+  <!-- Data object: Checkpoint                      -->
+  <!-- ============================================ -->
+  <line x1="600" y1="165" x2="600" y2="230" stroke="#5a6a7a" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <g transform="translate(615, 184)">
+    <rect width="100" height="26" rx="4" fill="#fff" stroke="#c5cdd6" stroke-width="0.8"/>
+    <text x="50" y="11" text-anchor="middle" font-size="8" font-weight="bold" fill="#3a5068">Checkpoint</text>
+    <text x="50" y="22" text-anchor="middle" font-size="7" fill="#7f8c8d">Weights + config</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- POLICY ENGINE (dashed outer container)       -->
+  <!-- Contains Policy Server + Embodiment Adapter  -->
+  <!-- ============================================ -->
+  <rect x="355" y="218" width="490" height="277" rx="14" fill="none" stroke="#5a6a7a" stroke-width="1.5" stroke-dasharray="8,4"/>
+  <text x="600" y="212" text-anchor="middle" font-size="12" font-weight="bold" fill="#5a6a7a">Policy Engine</text>
+
+  <!-- ROW 2: Policy Server (inside Policy Engine) -->
+  <g transform="translate(450, 235)">
+    <rect width="300" height="70" rx="10" fill="url(#block-grad)" stroke="#8fa4b8" stroke-width="2"/>
+    <text x="150" y="25" text-anchor="middle" font-size="14" font-weight="bold" fill="#2c3e50">Policy Server</text>
+    <line x1="20" y1="34" x2="280" y2="34" stroke="#b0bec5" stroke-opacity="0.5"/>
+    <text x="150" y="50" text-anchor="middle" font-size="9" fill="#5a6a7a">Serves trained policy for real-time inference</text>
+    <text x="55" y="64" font-size="8" fill="#8fa4b8">In: Observation</text>
+    <text x="195" y="64" font-size="8" fill="#8fa4b8">Out: ActionChunk</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- Arrows: Policy Server <-> Embodiment Adapter -->
+  <!-- (internal to Policy Engine)                  -->
+  <!-- ============================================ -->
+
+  <!-- ActionChunk down (right channel) -->
+  <line x1="640" y1="305" x2="640" y2="395" stroke="#5a6a7a" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <g transform="translate(655, 330)">
+    <rect width="110" height="26" rx="4" fill="#fff" stroke="#c5cdd6" stroke-width="0.8"/>
+    <text x="55" y="11" text-anchor="middle" font-size="8" font-weight="bold" fill="#3a5068">ActionChunk</text>
+    <text x="55" y="22" text-anchor="middle" font-size="7" fill="#7f8c8d">float[horizon × dim]</text>
+  </g>
+
+  <!-- Observation up (left channel) -->
+  <line x1="560" y1="395" x2="560" y2="305" stroke="#5a6a7a" stroke-width="1.2" marker-end="url(#arrow)" stroke-dasharray="5,3"/>
+  <g transform="translate(435, 330)">
+    <rect width="110" height="26" rx="4" fill="#fff" stroke="#c5cdd6" stroke-width="0.8"/>
+    <text x="55" y="11" text-anchor="middle" font-size="8" font-weight="bold" fill="#3a5068">Observation</text>
+    <text x="55" y="22" text-anchor="middle" font-size="7" fill="#7f8c8d">Cameras, Proprio, Prompt</text>
+  </g>
+
+  <!-- ROW 3: Embodiment Adapter (inside Policy Engine) -->
+  <g transform="translate(370, 400)">
+    <rect width="460" height="80" rx="10" fill="url(#block-grad)" stroke="#8fa4b8" stroke-width="2"/>
+    <text x="230" y="25" text-anchor="middle" font-size="14" font-weight="bold" fill="#2c3e50">Embodiment Adapter</text>
+    <line x1="20" y1="34" x2="440" y2="34" stroke="#b0bec5" stroke-opacity="0.5"/>
+    <text x="230" y="50" text-anchor="middle" font-size="9" fill="#5a6a7a">Bridges model I/O semantics to robot physical interfaces</text>
+    <text x="230" y="63" text-anchor="middle" font-size="8" fill="#8fa4b8">Action conversion (IK, frame transform), sensor → observation mapping</text>
+    <text x="230" y="75" text-anchor="middle" font-size="8" font-style="italic" fill="#c0392b">Configured by: ActionSemantics + ObsSemantics + EmbodimentMapping</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- Gap arrows: ActionSemantics + ObsSemantics   -->
+  <!-- (from checkpoint path to Adapter, right side)-->
+  <!-- ============================================ -->
+
+  <!-- ActionSemantics gap arrow (starts above Checkpoint label to avoid crossing) -->
+  <path d="M 715,195 L 875,195 Q 890,195 890,210 L 890,445 Q 890,455 880,455 L 835,455" stroke="#c0392b" stroke-width="1.5" fill="none" marker-end="url(#arrow-gap)" stroke-dasharray="5,3"/>
+  <g transform="translate(900, 250)">
+    <rect width="130" height="46" rx="4" fill="#fdf2f2" stroke="#c0392b" stroke-width="0.8"/>
+    <text x="65" y="12" text-anchor="middle" font-size="8" font-weight="bold" fill="#c0392b">ActionSemantics</text>
+    <text x="65" y="23" text-anchor="middle" font-size="6.5" fill="#c0392b">Repr type, units, frames,</text>
+    <text x="65" y="33" text-anchor="middle" font-size="6.5" fill="#c0392b">action groups, norm strategy</text>
+    <text x="65" y="43" text-anchor="middle" font-size="7" font-weight="bold" fill="#c0392b">NO STANDARD</text>
+  </g>
+
+  <!-- ObsSemantics gap arrow (starts just below ActionSemantics origin) -->
+  <path d="M 715,202 L 860,202 Q 875,202 875,217 L 875,415 Q 875,425 865,425 L 835,425" stroke="#c0392b" stroke-width="1.5" fill="none" marker-end="url(#arrow-gap)" stroke-dasharray="5,3"/>
+  <g transform="translate(900, 360)">
+    <rect width="130" height="46" rx="4" fill="#fdf2f2" stroke="#c0392b" stroke-width="0.8"/>
+    <text x="65" y="12" text-anchor="middle" font-size="8" font-weight="bold" fill="#c0392b">ObsSemantics</text>
+    <text x="65" y="23" text-anchor="middle" font-size="6.5" fill="#c0392b">Camera roles, extrinsics,</text>
+    <text x="65" y="33" text-anchor="middle" font-size="6.5" fill="#c0392b">intrinsics, proprio encoding</text>
+    <text x="65" y="43" text-anchor="middle" font-size="7" font-weight="bold" fill="#c0392b">NO STANDARD</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- Gap arrow: EmbodimentMapping                 -->
+  <!-- (from Robot Asset Store to Adapter, left)    -->
+  <!-- Box to the right of the arrow line           -->
+  <!-- ============================================ -->
+  <path d="M 220,165 L 220,415 Q 220,425 240,425 L 365,425" stroke="#c0392b" stroke-width="1.5" fill="none" marker-end="url(#arrow-gap)" stroke-dasharray="5,3"/>
+  <g transform="translate(235, 280)">
+    <rect width="140" height="46" rx="4" fill="#fdf2f2" stroke="#c0392b" stroke-width="0.8"/>
+    <text x="70" y="12" text-anchor="middle" font-size="8" font-weight="bold" fill="#c0392b">EmbodimentMapping</text>
+    <text x="70" y="23" text-anchor="middle" font-size="6.5" fill="#c0392b">Joint ordering, IK config,</text>
+    <text x="70" y="33" text-anchor="middle" font-size="6.5" fill="#c0392b">sensor-to-obs mapping</text>
+    <text x="70" y="43" text-anchor="middle" font-size="7" font-weight="bold" fill="#c0392b">NO STANDARD</text>
+  </g>
+
+  <!-- RobotDescription from Robot Asset Store to Adapter -->
+  <path d="M 120,165 L 120,440 Q 120,455 140,455 L 365,455" stroke="#5a6a7a" stroke-width="1.2" fill="none" marker-end="url(#arrow)" stroke-dasharray="5,3"/>
+  <g transform="translate(200, 460)">
+    <rect width="120" height="18" rx="4" fill="#fff" stroke="#c5cdd6" stroke-width="0.8"/>
+    <text x="60" y="13" text-anchor="middle" font-size="7.5" fill="#3a5068">RobotDescription</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- NETWORK BOUNDARY: Policy Engine <-> Robot    -->
+  <!-- Protocol: OpenPI WebSocket                   -->
+  <!-- ============================================ -->
+
+  <!-- TrajectoryCommand down: Adapter -> Robot Client (right channel) -->
+  <line x1="640" y1="480" x2="640" y2="535" stroke="#5a6a7a" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <g transform="translate(655, 498)">
+    <rect width="120" height="26" rx="4" fill="#fff" stroke="#c5cdd6" stroke-width="0.8"/>
+    <text x="60" y="11" text-anchor="middle" font-size="8" font-weight="bold" fill="#3a5068">TrajectoryCommand</text>
+    <text x="60" y="22" text-anchor="middle" font-size="7" fill="#7f8c8d">Named joints, targets</text>
+  </g>
+
+  <!-- SensorStream up: Robot Client -> Adapter (left channel) -->
+  <line x1="560" y1="535" x2="560" y2="480" stroke="#5a6a7a" stroke-width="1.2" marker-end="url(#arrow)" stroke-dasharray="5,3"/>
+  <g transform="translate(425, 498)">
+    <rect width="110" height="26" rx="4" fill="#fff" stroke="#c5cdd6" stroke-width="0.8"/>
+    <text x="55" y="11" text-anchor="middle" font-size="8" font-weight="bold" fill="#3a5068">SensorStream</text>
+    <text x="55" y="22" text-anchor="middle" font-size="7" fill="#7f8c8d">Joints, Cameras, T</text>
+  </g>
+
+  <!-- Protocol annotation: OpenPI WebSocket -->
+  <text x="350" y="520" text-anchor="end" font-size="9" fill="#8b5cf6" font-style="italic">OpenPI WebSocket</text>
+
+  <!-- ============================================ -->
+  <!-- Robot Client (protocol bridge)               -->
+  <!-- ============================================ -->
+  <g transform="translate(450, 540)">
+    <rect width="300" height="35" rx="8" fill="url(#block-grad)" stroke="#8fa4b8" stroke-width="1"/>
+    <text x="150" y="15" text-anchor="middle" font-size="11" font-weight="bold" fill="#2c3e50">Robot Policy Client</text>
+    <text x="150" y="28" text-anchor="middle" font-size="8" fill="#8fa4b8">OpenPI client + ROS 2 bridge</text>
+  </g>
+
+  <!-- Protocol annotation: ROS 2 -->
+  <text x="350" y="593" text-anchor="end" font-size="9" fill="#2267a0" font-style="italic">ROS 2 topics</text>
+
+  <!-- Arrows: Robot Client -> Robot Controller -->
+  <line x1="640" y1="575" x2="640" y2="645" stroke="#5a6a7a" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <line x1="560" y1="645" x2="560" y2="575" stroke="#5a6a7a" stroke-width="1.2" marker-end="url(#arrow)" stroke-dasharray="5,3"/>
+
+  <!-- ROS 2 data labels between Robot Client and Controller -->
+  <g transform="translate(655, 595)">
+    <rect width="115" height="18" rx="4" fill="#fff" stroke="#c5cdd6" stroke-width="0.8"/>
+    <text x="57" y="13" text-anchor="middle" font-size="7.5" fill="#3a5068">JointTrajectory</text>
+  </g>
+  <g transform="translate(430, 595)">
+    <rect width="115" height="18" rx="4" fill="#fff" stroke="#c5cdd6" stroke-width="0.8"/>
+    <text x="57" y="13" text-anchor="middle" font-size="7.5" fill="#3a5068">JointState / Image</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- ROW 4: Robot Controller (center=600)         -->
+  <!-- Shifted +80px from original y=565            -->
+  <!-- ============================================ -->
+  <g transform="translate(370, 645)">
+    <rect width="460" height="60" rx="10" fill="url(#block-grad)" stroke="#8fa4b8" stroke-width="1.5"/>
+    <text x="230" y="22" text-anchor="middle" font-size="14" font-weight="bold" fill="#2c3e50">Robot Controller</text>
+    <line x1="20" y1="31" x2="440" y2="31" stroke="#b0bec5" stroke-opacity="0.5"/>
+    <text x="230" y="47" text-anchor="middle" font-size="9" fill="#5a6a7a">Embodiment-specific control (same interface for sim + real)</text>
+    <text x="230" y="57" text-anchor="middle" font-size="8" fill="#8fa4b8">ros2_control: position / velocity / effort controllers</text>
+  </g>
+
+  <!-- RobotDescription from Robot Asset Store to Controller -->
+  <path d="M 80,165 L 80,660 Q 80,675 100,675 L 365,675" stroke="#5a6a7a" stroke-width="1.2" fill="none" marker-end="url(#arrow)" stroke-dasharray="5,3"/>
+  <g transform="translate(200, 680)">
+    <rect width="120" height="18" rx="4" fill="#fff" stroke="#c5cdd6" stroke-width="0.8"/>
+    <text x="60" y="13" text-anchor="middle" font-size="7.5" fill="#3a5068">RobotDescription</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- ROW 5: Hardware backends (symmetric)         -->
+  <!-- Shifted +80px                                -->
+  <!-- ============================================ -->
+
+  <!-- Arrow: Controller -> Real Hardware -->
+  <path d="M 490,705 L 400,775" stroke="#5a6a7a" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <g transform="translate(370, 727)">
+    <rect width="110" height="18" rx="4" fill="#fff" stroke="#c5cdd6" stroke-width="0.8"/>
+    <text x="55" y="13" text-anchor="middle" font-size="7.5" fill="#3a5068">HardwareCommand</text>
+  </g>
+
+  <!-- Arrow: Controller -> Simulator -->
+  <path d="M 710,705 L 800,775" stroke="#5a6a7a" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <g transform="translate(720, 727)">
+    <rect width="110" height="18" rx="4" fill="#fff" stroke="#c5cdd6" stroke-width="0.8"/>
+    <text x="55" y="13" text-anchor="middle" font-size="7.5" fill="#3a5068">HardwareCommand</text>
+  </g>
+
+  <!-- Real Hardware (center=400) -->
+  <g transform="translate(300, 780)">
+    <rect width="200" height="55" rx="10" fill="url(#block-grad)" stroke="#8fa4b8" stroke-width="1.5"/>
+    <text x="100" y="22" text-anchor="middle" font-size="13" font-weight="bold" fill="#2c3e50">Real Hardware</text>
+    <line x1="15" y1="30" x2="185" y2="30" stroke="#b0bec5" stroke-opacity="0.5"/>
+    <text x="100" y="45" text-anchor="middle" font-size="9" fill="#5a6a7a">Physical actuators + sensors</text>
+  </g>
+
+  <!-- Simulator (center=800) -->
+  <g transform="translate(700, 780)">
+    <rect width="200" height="55" rx="10" fill="url(#block-grad)" stroke="#8fa4b8" stroke-width="1.5"/>
+    <text x="100" y="22" text-anchor="middle" font-size="13" font-weight="bold" fill="#2c3e50">Simulator</text>
+    <line x1="15" y1="30" x2="185" y2="30" stroke="#b0bec5" stroke-opacity="0.5"/>
+    <text x="100" y="45" text-anchor="middle" font-size="9" fill="#5a6a7a">Physics engine + environment</text>
+  </g>
+
+  <!-- EnvironmentDescription from Env Asset Store to Simulator -->
+  <path d="M 1030,165 L 1030,805 Q 1030,820 1015,820 L 905,820" stroke="#5a6a7a" stroke-width="1.2" fill="none" marker-end="url(#arrow)" stroke-dasharray="5,3"/>
+  <g transform="translate(1040, 430)">
+    <rect width="110" height="28" rx="4" fill="#fff" stroke="#c5cdd6" stroke-width="0.8"/>
+    <text x="55" y="11" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#3a5068">EnvironmentDesc</text>
+    <text x="55" y="22" text-anchor="middle" font-size="7" fill="#7f8c8d">Scene, physics, cams</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- ROW 6: Data Collector (center=600)           -->
+  <!-- Shifted +80px                                -->
+  <!-- ============================================ -->
+
+  <!-- Arrow: Real Hardware -> Data Collector -->
+  <path d="M 400,835 L 540,895" stroke="#5a6a7a" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g transform="translate(390, 855)">
+    <rect width="90" height="18" rx="4" fill="#fff" stroke="#c5cdd6" stroke-width="0.8"/>
+    <text x="45" y="13" text-anchor="middle" font-size="7.5" fill="#3a5068">SensorStream</text>
+  </g>
+
+  <!-- Arrow: Simulator -> Data Collector -->
+  <path d="M 800,835 L 660,895" stroke="#5a6a7a" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g transform="translate(720, 855)">
+    <rect width="90" height="18" rx="4" fill="#fff" stroke="#c5cdd6" stroke-width="0.8"/>
+    <text x="45" y="13" text-anchor="middle" font-size="7.5" fill="#3a5068">SensorStream</text>
+  </g>
+
+  <!-- Data Collector (center=600) -->
+  <g transform="translate(500, 900)">
+    <rect width="200" height="55" rx="10" fill="url(#block-grad)" stroke="#8fa4b8" stroke-width="1.5"/>
+    <text x="100" y="22" text-anchor="middle" font-size="13" font-weight="bold" fill="#2c3e50">Data Collector</text>
+    <line x1="15" y1="30" x2="185" y2="30" stroke="#b0bec5" stroke-opacity="0.5"/>
+    <text x="100" y="45" text-anchor="middle" font-size="9" fill="#5a6a7a">Records, resamples, converts</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- ROW 7: Dataset Store (center=600)            -->
+  <!-- Shifted +80px                                -->
+  <!-- ============================================ -->
+
+  <!-- Arrow: Data Collector -> Dataset Store -->
+  <line x1="600" y1="955" x2="600" y2="1000" stroke="#5a6a7a" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="8,4"/>
+  <g transform="translate(615, 962)">
+    <rect width="80" height="26" rx="4" fill="#fff" stroke="#c5cdd6" stroke-width="0.8"/>
+    <text x="40" y="11" text-anchor="middle" font-size="8" font-weight="bold" fill="#3a5068">Episode</text>
+    <text x="40" y="22" text-anchor="middle" font-size="7" fill="#7f8c8d">(real + synth)</text>
+  </g>
+
+  <!-- Dataset Store (center=600) -->
+  <g transform="translate(500, 1005)">
+    <rect width="200" height="55" rx="10" fill="url(#block-grad)" stroke="#8fa4b8" stroke-width="1.5"/>
+    <text x="100" y="22" text-anchor="middle" font-size="13" font-weight="bold" fill="#2c3e50">Dataset Store</text>
+    <line x1="15" y1="30" x2="185" y2="30" stroke="#b0bec5" stroke-opacity="0.5"/>
+    <text x="100" y="45" text-anchor="middle" font-size="9" fill="#5a6a7a">Versioned training episodes</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- Annotations                                  -->
+  <!-- ============================================ -->
+  <g transform="translate(60, 1080)">
+    <rect width="1080" height="45" rx="6" fill="#fdf2f2" stroke="#c0392b" stroke-width="1"/>
+    <text x="15" y="17" font-size="10" font-weight="bold" fill="#c0392b">Semantic Metadata Gaps (red dashed arrows = no standard)</text>
+    <text x="15" y="35" font-size="8" fill="#2c3e50">ActionSemantics (repr type, units, frames, action groups)  ·  ObservationSemantics (camera roles, extrinsics, proprioception encoding)  ·  EmbodimentMapping (joint ordering, IK, sensor map)  ·  Normalization contract</text>
+  </g>
+
+</svg>
