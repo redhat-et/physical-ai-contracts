@@ -2,7 +2,7 @@
 
 **Date**: 2026-09-21 (updated; originally 2026-09-20)
 **Purpose**: Document how the logical functions from our architecture diagrams (Policy Server, Embodiment Adapter, Robot Controller) map to actual deployment units across ecosystems. Examines where adapter logic lives, what it does, and why the current fragmentation matters for interoperability.
-**Input**: Source code analysis of OpenPI, vLLM-Omni, and GR00T/LEAPP; web research on deployment patterns.
+**Input**: Source code analysis of OpenPI, vLLM-Omni, LeRobot, and GR00T/LEAPP; web research on deployment patterns.
 
 ---
 
@@ -65,7 +65,7 @@ vLLM-Omni **does** have per-robot adapter code (e.g., `DroidTransform`), indepen
 [Export time]                         [Deploy time]
 ┌─────────────────────┐               ┌─────────────────────┐
 │ LEAPP export        │               │ Triton Server       │
-│ --embodiment_tag    │──► ONNX ──►  │ (runs ONNX stages)  │
+│ --embodiment_tag    │ ──► ONNX ──►  │ (runs ONNX stages)  │
 │ --joint_config      │    bundle     ├─────────────────────┤
 │                     │               │ isaac_ros_deploy    │
 │ Bakes in:           │               │ (ROS 2 bridge)      │
@@ -81,7 +81,56 @@ For humanoids, a two-tier system applies: GR00T VLA at ~10 Hz produces latent ac
 
 **Sources**: [LEAPP docs](https://nvidia-isaac.github.io/leapp/), [LEAPP tensor semantics](https://nvidia-isaac.github.io/leapp/semantics/usage.html), [isaac_ros_deploy](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_deploy), [GR00T E2E deployment guide](https://docs.nvidia.com/learning/physical-ai/gr00t-e2e-workflow/latest/real-robot-workflow/real-deployment.html)
 
-### 2.4 SGLang: Client-side adapter, optimized VLA runtime
+### 2.4 LeRobot PolicyServer: Single-client gRPC, serialized pipelines
+
+**Architecture**: Two-process split introduced with [SmolVLA](https://huggingface.co/papers/2506.01844). A `PolicyServer` (gRPC) runs on GPU hardware; a `RobotClient` runs on the robot. Unlike OpenPI/vLLM-Omni where the server is pre-configured, LeRobot's server starts empty — the client configures it via a `SendPolicyInstructions` handshake.
+
+```
+[GPU Workstation]                    [Robot]
+┌──────────────────────┐             ┌──────────────────────┐
+│ PolicyServer (gRPC)  │   gRPC/H2   │ RobotClient          │
+│ ┌──────────────────┐ │◄───────────►│ ┌──────────────────┐ │
+│ │ Policy (pi0.5)   │ │             │ │ Action queue     │ │
+│ ├──────────────────┤ │             │ │ + chunk merging  │ │
+│ │ Preprocessor     │ │             │ │ (weighted_avg,   │ │
+│ │ (JSON pipeline   │ │             │ │  latest_only,    │ │
+│ │  + safetensors)  │ │             │ │  conservative)   │ │
+│ ├──────────────────┤ │             │ ├──────────────────┤ │
+│ │ Postprocessor    │ │             │ │ ros2_control /   │ │
+│ │ (JSON pipeline   │ │             │ │ direct HW        │ │
+│ │  + safetensors)  │ │             │ └──────────────────┘ │
+│ └──────────────────┘ │             └──────────────────────┘
+└──────────────────────┘
+```
+
+**Key architectural differences from OpenPI/vLLM-Omni:**
+
+1. **Client-configures-server.** The client sends a `RemotePolicyConfig` (policy_type, pretrained path, device, actions_per_chunk, features, rename_map) during the `SendPolicyInstructions` RPC. The server then loads the checkpoint and its processing pipelines. This inverts the OpenPI pattern where the server is pre-configured and the client must match its expectations.
+
+2. **Serialized processing pipelines.** The checkpoint ships `policy_preprocessor.json` and `policy_postprocessor.json` — ordered step lists (rename → batch → relative_actions → normalize → tokenize → device) with registry names and configs. Normalization statistics live in companion safetensors files. This is the only ecosystem where the full processing chain is declaratively described and portable across servers.
+
+3. **Single-client design.** One PolicyServer serves one policy to one client. No batching, no multiplexing.
+
+4. **Client-side action queue with chunk merging.** The RobotClient maintains a local queue and merges overlapping action chunks using configurable aggregation functions. This is complemented by Real-Time Chunking (RTC), which adds a guidance term during flow-matching denoising to enforce consistency between consecutive chunks.
+
+5. **Observation deduplication.** The server rejects observations similar to the last one used for inference (joint-space similarity check), preventing redundant compute.
+
+**Security concern**: Both directions use **pickle serialization** for the gRPC `bytes` fields, making the protobuf messages opaque byte blobs. This led to [CVE-2026-25874](https://github.com/huggingface/lerobot/issues/3047) (CVSS 9.3/9.8, unauthenticated RCE). The [strands-labs/robots](https://github.com/strands-labs/robots/issues/4257) project noted they cannot build a thin gRPC client because the wire format is pickle, not structured protobuf. [PR #3048](https://github.com/huggingface/lerobot/pull/3048) replaces pickle with safetensors + JSON inside the same `bytes` fields (security fix, not interoperability fix — the gRPC messages remain opaque). The PR has been open for ~7 months; v0.6.0 shipped without it. Now tracked as [v0.7.0 roadmap](https://github.com/huggingface/lerobot/issues/3832) item RUN-04.
+
+**gRPC API** (4 RPCs in `AsyncInference` service):
+
+| RPC | Type | Purpose |
+| --- | --- | --- |
+| `Ready` | Unary | Connectivity check; resets server state |
+| `SendPolicyInstructions` | Unary | Client sends `RemotePolicyConfig`; server loads checkpoint |
+| `SendObservations` | Server-streaming | Client streams chunked observation bytes (chunked because camera frames exceed gRPC's 4MB message limit) |
+| `GetActions` | Bidirectional | Server blocks on observation queue, runs inference, returns serialized action chunk |
+
+**Also: `lerobot-rollout` (local deployment).** LeRobot's primary on-robot deployment tool runs policy inference in-process (sync mode) or in a background thread (RTC mode), with no network protocol. Supports multiple execution strategies (base, sentry, highlight, DAgger, episodic). This path is more commonly used than the async gRPC server.
+
+**Sources**: [LeRobot async inference docs](https://huggingface.co/docs/lerobot/en/async), [HF Blog — Async Robot Inference](https://huggingface.co/blog/async-robot-inference), [LeRobot RTC docs](https://huggingface.co/docs/lerobot/rtc), [Security issue #3047](https://github.com/huggingface/lerobot/issues/3047), [strands-labs issue #4257](https://github.com/strands-labs/robots/issues/4257)
+
+### 2.5 SGLang: Client-side adapter, optimized VLA runtime
 
 **Architecture**: Same remote-inference topology, but with two key differences from OpenPI/vLLM-Omni:
 
@@ -104,7 +153,7 @@ For humanoids, a two-tier system applies: GR00T VLA at ~10 Hz produces latent ac
 
 **Sources**: [SGLang pi0.5 docs](https://docs.sglang.io/cookbook/vla/OpenPI/Pi0.5), [SGLang pi0 issue #18266](https://github.com/sgl-project/sglang/issues/18266), [RLinf SGLang adapter docs](https://rlinf.readthedocs.io/en/latest/rst_source/extending/sglang_embodied_model.html)
 
-### 2.5 vLLM-Omni: Corrected architecture characterization
+### 2.6 vLLM-Omni: Corrected architecture characterization
 
 vLLM-Omni does NOT route VLA through an AR token decode path. It has three dedicated runtime modules — AR, Diffusion, and Generation — connected via a stage graph. Pi0/pi0.5 is decomposed into an AR VLM stage + a flow-matching action head stage, each served by the appropriate runtime.
 
@@ -178,6 +227,31 @@ RGB conversion → HWC→CHW → scale to [0,1] → resize with pad to 224×224 
 
 **Sources**: [OpenPI source — model.py, droid_policy.py](https://github.com/Physical-Intelligence/openpi/tree/main/src/openpi), [vLLM-Omni — processor_pi0.py, droid.py](https://github.com/vllm-project/vllm-omni), [SGLang — pi05_preprocess.py, Pi0.5 cookbook](https://docs.sglang.io/cookbook/vla/OpenPI/Pi0.5)
 
+### 3.3 LeRobot Checkpoint → vLLM-Omni: A Concrete Portability Case Study
+
+A colleague fine-tuned pi0.5 on LIBERO using LeRobot and published the checkpoint at [`execbat/pi05-robot-finetuned`](https://huggingface.co/execbat/pi05-robot-finetuned). This provides a concrete test of whether a LeRobot-produced checkpoint can be served by vLLM-Omni — the answer is **no, not without manual intervention**, despite both understanding pi0.5 architecture and SafeTensors weights.
+
+**Blocker: Config validation rejects `empty_cameras`.** The fine-tuned config has `"empty_cameras": 1` with a corresponding `observation.images.empty_camera_0` input feature (224×224 placeholder). vLLM-Omni's `Pi05Config` validation explicitly rejects `empty_cameras` because it changes model input semantics in ways the runtime doesn't implement. This is a feature LeRobot routinely produces during fine-tuning when a checkpoint supports more camera slots than the training dataset uses.
+
+**Likely issue: Normalization stats loading.** The checkpoint stores normalization stats in `policy_preprocessor_step_3_normalizer_processor.safetensors`, referenced via `state_file` in `policy_preprocessor.json`. vLLM-Omni reads `policy_preprocessor.json` for the normalization strategy (`norm_map`), but whether it follows the `state_file` reference to load quantile stats is uncertain — the base model ships with empty stats, so this code path may be untested.
+
+**Not a blocker: weights.** Despite the size difference (base: 14.47 GB in float32/mixed, fine-tuned: 9.35 GB in bfloat16), the fine-tuned checkpoint contains **all** model weights, not just the expert. LeRobot's `save_pretrained` saves the full `state_dict()` regardless of which parameters were frozen during training — `train_expert_only` and `freeze_vision_encoder` control gradient computation, not checkpoint contents. The size reduction is entirely a dtype artifact (float32 → bfloat16). vLLM-Omni should find all 812 weight tensors.
+
+**What works**: vLLM-Omni does understand LeRobot's `config.json` format (with `type: "pi05"`, `input_features`, `output_features`, `normalization_mapping`) — it has a specific autodetect branch for configs with `type` but no `architectures` key. Training-only fields (optimizer, scheduler, etc.) are tolerated and ignored. The base model loads successfully: `vllm serve lerobot/pi05_base --omni` matches 812/812 weights.
+
+**Implications for contracts**: This case demonstrates two distinct metadata gaps:
+
+| Gap | What happens | What a descriptor could fix |
+| --- | --- | --- |
+| **Config feature divergence** | `empty_cameras` is valid in LeRobot training but rejected by vLLM-Omni serving. No way for the checkpoint to declare which config features are serving-relevant vs. training-only. | A serving-readiness profile could distinguish training-time features from serving-time requirements, or a compatibility check could flag issues before deployment. |
+| **Normalization stats portability** | Stats in processor safetensors (LeRobot) vs. `norm_stats.json` (OpenPI) vs. `_build_norm_buffers` (vLLM-Omni code). Same information, three formats. | A NormalizationDescriptor with a standard stats format would make normalization portable across servers. |
+
+**Note on dtype**: The base model uses float32 (with likely mixed precision internally — some vision encoder tensors in fp16). The fine-tuned model saves everything in bfloat16. Whether vLLM-Omni handles this dtype difference transparently (auto-casting at load time) or requires explicit configuration is another potential friction point.
+
+The fine-tuned model's `README.md` has minimal metadata — only `datasets: lerobot/libero`, `base_model: lerobot/pi05_base`, and tags `robot:Franka-Panda`, `steps:20000`. None of the structured HF model card fields (`pipeline_tag`, `library_name`, `model-index`) are populated.
+
+**Sources**: [execbat/pi05-robot-finetuned](https://huggingface.co/execbat/pi05-robot-finetuned), [lerobot/pi05_base](https://huggingface.co/lerobot/pi05_base), [vLLM-Omni Pi0.5 PR #6950](https://github.com/vllm-project/vllm-omni/pull/6950), [vLLM-Omni Pi0/Pi0.5 shared structure #7709](https://github.com/vllm-project/vllm-omni/issues/7709)
+
 ---
 
 ## 4. What the Adapter Classes Actually Do
@@ -208,6 +282,7 @@ Adding a new robot means writing a new `*Inputs`/`*Outputs` class with hardcoded
 | --- | --- | --- |
 | OpenPI | No | Hardcoded Python classes per robot |
 | vLLM-Omni | No | Hardcoded Python transforms per robot |
+| LeRobot | No | Serialized preprocessor/postprocessor JSON pipelines + client-provided `rename_map` |
 | GR00T/LEAPP | No (`--joint_config` + `--embodiment_tag` at export) | Modality config (Python/JSON), baked into ONNX |
 | ros2_control | Yes (loads URDF for joint names, limits, HW interfaces) | URDF + controller YAML config |
 
@@ -306,7 +381,8 @@ Ranked by severity, based on analysis of every interface in the architecture dia
 | Interface | Severity | Nature |
 | --- | --- | --- |
 | **Policy Server ↔ Adapter** | **High** | Adapter logic duplicated across 3+ servers as hardcoded Python |
-| **Client ↔ Server wire format** | **High** | Three incompatible msgpack numpy serialization dialects (`openpi-client`, `vLLM-native`, `msgpack-numpy` package). Clients that pack arrays in one dialect fail on servers expecting another. vLLM-Omni had to patch its decoder ([PR #6051](https://github.com/vllm-project/vllm-omni/pull/6051)) to accept all three. |
+| **Client ↔ Server wire format** | **High** | Three incompatible msgpack numpy serialization dialects (`openpi-client`, `vLLM-native`, `msgpack-numpy` package). Clients that pack arrays in one dialect fail on servers expecting another. vLLM-Omni had to patch its decoder ([PR #6051](https://github.com/vllm-project/vllm-omni/pull/6051)) to accept all three. LeRobot uses pickle-serialized gRPC — incompatible with all three and a security risk ([CVE-2026-25874](https://github.com/huggingface/lerobot/issues/3047)). |
+| **Checkpoint → Server loading** | **High** | LeRobot fine-tuned checkpoints cannot be loaded by vLLM-Omni without manual intervention (see [Section 3.3](#33-lerobot-checkpoint--vllm-omni-a-concrete-portability-case-study)). Config validation rejects training features (`empty_cameras`), normalization stats storage format differs (processor safetensors vs. `norm_stats.json` vs. code), and no metadata distinguishes training-only config fields from serving-relevant ones. Weights themselves are portable (full state_dict in SafeTensors). |
 | **Data Collector → Dataset Store** | **High** | 6+ independent ROSbag-to-LeRobot converters, each with different resampling strategies. No metadata records which strategy was used. Source: [LeRobot ROS 2 RFC #4368](https://github.com/huggingface/lerobot/issues/4368) |
 | **Image preprocessing pipeline** | **Medium** | All servers preprocess images server-side, but vLLM-Omni's `DroidTransform` stitches views into a composite image while OpenPI/SGLang keep views separate. Same robot + same checkpoint → different model input depending on server. |
 | **Model Registry → Policy Server** | **Medium** | SafeTensors converging as weight format, but sidecar loading (config.json, norm_stats, processor files) diverges. Subtle pitfalls: BF16↔FP16 coercion, attention weight interleaving order. |
@@ -324,3 +400,5 @@ Ranked by severity, based on analysis of every interface in the architecture dia
 4. How does the two-tier SONIC architecture (latent action tokens → motor commands) change the adapter boundary? Is SONIC itself an adapter, a controller, or something in between?
 5. Is a ros2_control controller with embedded remote-inference client (WebSocket to OpenPI/vLLM-Omni) a viable community contribution? What are the real-time implications of making WebSocket calls from a ros2_control update loop?
 6. Is the VLAgents/RobotControlStack argument — that ROS 2's async pub/sub is fundamentally wrong for synchronous policy-control loops — gaining traction in the community?
+7. Should checkpoint `config.json` distinguish training-only fields from serving-relevant ones? LeRobot fine-tuning produces configs with fields like `empty_cameras`, `gradient_checkpointing`, `compile_mode` that are meaningful during training but cause validation failures in serving runtimes like vLLM-Omni. The `execbat/pi05-robot-finetuned` case (Section 3.3) shows the concrete cost: a valid LeRobot checkpoint is rejected by vLLM-Omni because of a training feature (`empty_cameras`) that the server doesn't implement.
+8. Could LeRobot's serialized processing pipelines (`policy_preprocessor.json` / `policy_postprocessor.json`) evolve into a cross-server standard? The format is conceptually right (ordered step list with configs and state files), but the `registry_name` values are LeRobot-Python-bound. A runtime-agnostic version could let vLLM-Omni and SGLang consume the same pipeline description.

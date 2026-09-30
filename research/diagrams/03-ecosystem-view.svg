@@ -168,9 +168,11 @@
     <text x="150" y="25" text-anchor="middle" font-size="14" font-weight="bold" fill="#2c3e50">Policy Server</text>
     <line x1="20" y1="34" x2="280" y2="34" stroke="#b0bec5" stroke-opacity="0.5"/>
     <text x="150" y="50" text-anchor="middle" font-size="9" fill="#5a6a7a">Real-time VLA inference</text>
-    <text x="100" y="64" text-anchor="middle" font-size="7.5" font-style="italic" fill="#8b5cf6">OpenPI</text>
-    <text x="150" y="64" text-anchor="middle" font-size="7.5" fill="#8fa4b8">/</text>
-    <text x="200" y="64" text-anchor="middle" font-size="7.5" font-style="italic" fill="#8b5cf6">vLLM-Omni</text>
+    <text x="90" y="64" text-anchor="middle" font-size="7.5" font-style="italic" fill="#8b5cf6">OpenPI</text>
+    <text x="125" y="64" text-anchor="middle" font-size="7.5" fill="#8fa4b8">/</text>
+    <text x="165" y="64" text-anchor="middle" font-size="7.5" font-style="italic" fill="#8b5cf6">vLLM-Omni</text>
+    <text x="205" y="64" text-anchor="middle" font-size="7.5" fill="#8fa4b8">/</text>
+    <text x="240" y="64" text-anchor="middle" font-size="7.5" font-style="italic" fill="#ff9d00">LeRobot</text>
   </g>
 
   <!-- ============================================ -->
@@ -252,20 +254,22 @@
   <!-- Protocol: OpenPI WebSocket                   -->
   <!-- ============================================ -->
 
-  <!-- TrajectoryCommand down: Adapter -> Robot Client (OpenPI) -->
+  <!-- TrajectoryCommand down: Adapter -> Robot Client -->
   <line x1="640" y1="480" x2="640" y2="535" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrow-openpi)"/>
-  <g transform="translate(655, 498)">
-    <rect width="130" height="26" rx="4" fill="#f3eef9" stroke="#8b5cf6" stroke-width="0.8"/>
-    <text x="65" y="11" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#8b5cf6">OpenPI WebSocket</text>
-    <text x="65" y="22" text-anchor="middle" font-size="6.5" fill="#8b5cf6">TrajectoryCommand</text>
+  <g transform="translate(655, 493)">
+    <rect width="140" height="36" rx="4" fill="#f3eef9" stroke="#8b5cf6" stroke-width="0.8"/>
+    <text x="70" y="11" text-anchor="middle" font-size="7" font-weight="bold" fill="#8b5cf6">OpenPI WebSocket / HTTP</text>
+    <text x="70" y="22" text-anchor="middle" font-size="7" font-weight="bold" fill="#ff9d00">LeRobot gRPC (pickle)</text>
+    <text x="70" y="32" text-anchor="middle" font-size="6.5" fill="#5a6a7a">ActionChunk</text>
   </g>
 
-  <!-- SensorStream up: Robot Client -> Adapter (OpenPI) -->
+  <!-- SensorStream up: Robot Client -> Adapter -->
   <line x1="560" y1="535" x2="560" y2="480" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arrow-openpi)" stroke-dasharray="5,3"/>
-  <g transform="translate(425, 498)">
-    <rect width="120" height="26" rx="4" fill="#f3eef9" stroke="#8b5cf6" stroke-width="0.8"/>
-    <text x="60" y="11" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#8b5cf6">OpenPI WebSocket</text>
-    <text x="60" y="22" text-anchor="middle" font-size="6.5" fill="#8b5cf6">SensorStream</text>
+  <g transform="translate(420, 493)">
+    <rect width="125" height="36" rx="4" fill="#f3eef9" stroke="#8b5cf6" stroke-width="0.8"/>
+    <text x="62" y="11" text-anchor="middle" font-size="7" font-weight="bold" fill="#8b5cf6">OpenPI WebSocket / HTTP</text>
+    <text x="62" y="22" text-anchor="middle" font-size="7" font-weight="bold" fill="#ff9d00">LeRobot gRPC (pickle)</text>
+    <text x="62" y="32" text-anchor="middle" font-size="6.5" fill="#5a6a7a">Observation</text>
   </g>
 
   <!-- ============================================ -->
@@ -419,7 +423,7 @@
     <rect width="530" height="65" rx="6" fill="#eaf7ea" stroke="#27ae60" stroke-width="1"/>
     <text x="15" y="18" font-size="10" font-weight="bold" fill="#27ae60">Converged Standards</text>
     <text x="15" y="35" font-size="8" fill="#2c3e50">Weights: SafeTensors   Video: MP4   Dataset: LeRobot v3   Hosting: HF Hub</text>
-    <text x="15" y="48" font-size="8" fill="#2c3e50">Serving: OpenPI convention   Env API: Gymnasium   Robot desc: URDF/MJCF</text>
+    <text x="15" y="48" font-size="8" fill="#2c3e50">Serving: OpenPI convention (emerging, not universal)   Env API: Gymnasium   Robot desc: URDF/MJCF</text>
     <text x="15" y="60" font-size="8" fill="#2c3e50">Control: ros2_control   Sim assets: OpenUSD/SimReady</text>
   </g>
 

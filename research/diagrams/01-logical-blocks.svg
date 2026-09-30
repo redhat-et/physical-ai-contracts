@@ -272,8 +272,9 @@
     <text x="55" y="22" text-anchor="middle" font-size="7" fill="#7f8c8d">Joints, Cameras, T</text>
   </g>
 
-  <!-- Protocol annotation: OpenPI WebSocket -->
-  <text x="350" y="520" text-anchor="end" font-size="9" fill="#8b5cf6" font-style="italic">OpenPI WebSocket</text>
+  <!-- Protocol annotations: multiple competing protocols -->
+  <text x="350" y="514" text-anchor="end" font-size="9" fill="#8b5cf6" font-style="italic">OpenPI WebSocket / HTTP</text>
+  <text x="350" y="527" text-anchor="end" font-size="9" fill="#5a6a7a" font-style="italic">LeRobot gRPC (pickle)</text>
 
   <!-- ============================================ -->
   <!-- Robot Client (protocol bridge)               -->

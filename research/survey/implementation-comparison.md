@@ -8,23 +8,25 @@
 
 ## 1. Policy Server Implementations
 
-Three serving approaches exist for deploying VLA models to real-time robot control.
+Four serving approaches exist for deploying VLA models to real-time robot control.
 
-| Property | OpenPI Server | vLLM-Omni | Isaac Lab / Isaac ROS Deploy |
-| --- | --- | --- | --- |
-| **Transport** | WebSocket (port 8000) | HTTP REST `/v1/realtime/robot/openpi` | In-process (gym env) or ROS 2 (`isaac_ros_deploy`) |
-| **Client SDK** | `openpi-client` (Python, minimal deps) | Standard HTTP client | Gymnasium API or ROS 2 `InferenceController` |
-| **Observation input** | Python dict: `observation/image` (uint8 224x224), `observation/wrist_image` (uint8 224x224), `observation/state` (float[]), `prompt` (string). Field names vary per robot config. | Multi-view images (1-3 views, uint8), proprioceptive state (float[]), language instruction (string). Format matches OpenPI convention. | GPU tensors via PhysX Direct-GPU API. Observation dict with keys defined per `ObservationCfg`. Joint data via `Articulation.data.joint_pos`. |
-| **Action output** | `actions`: float[horizon x action_dim], e.g. `(10, 7)`. No metadata on semantics. | float[horizon x action_dim]. Same shape convention as OpenPI. | GPU tensor `action` applied via `env.step(action)`. Shape defined by `action_space` config. |
-| **Model loading** | `TrainConfig` Python object + per-robot `*Inputs`/`*Outputs` adapter classes. `norm_stats.json` per dataset. | HF `config.json` + safetensors. Model-specific code in vLLM-Omni model registry. | JIT-traced `policy.pt` (PyTorch), ONNX via TensorRT/OnnxRuntime, or direct Python model. |
-| **Schema exchange** | None. Client must know exact field names per robot config. Runtime error on mismatch. | None documented. Client must know model's expected observation format. | None. Observation/action spaces defined in env config, not negotiated. |
-| **Normalization** | Server-side via `norm_stats.json`. Client sends unnormalized state. | Server-side via `_build_norm_buffers`. Quantile normalization was initially broken (returned `None`). | Baked into ONNX graph (Sub/Div/BatchNorm ops) or handled in env wrapper. |
+| Property | OpenPI Server | vLLM-Omni | LeRobot PolicyServer | Isaac Lab / Isaac ROS Deploy |
+| --- | --- | --- | --- | --- |
+| **Transport** | WebSocket (port 8000) | HTTP REST `/v1/realtime/robot/openpi` | gRPC (HTTP/2) | In-process (gym env) or ROS 2 (`isaac_ros_deploy`) |
+| **Client SDK** | `openpi-client` (Python, minimal deps) | Standard HTTP client | `RobotClient` (Python, gRPC) | Gymnasium API or ROS 2 `InferenceController` |
+| **Observation input** | Python dict: `observation/image` (uint8 224x224), `observation/wrist_image` (uint8 224x224), `observation/state` (float[]), `prompt` (string). Field names vary per robot config. | Multi-view images (1-3 views, uint8), proprioceptive state (float[]), language instruction (string). Format matches OpenPI convention. | `RobotObservation` dict, pickle-serialized over gRPC. Client sends raw sensor data; server applies full preprocessor pipeline. Field mapping via `rename_map` in handshake. | GPU tensors via PhysX Direct-GPU API. Observation dict with keys defined per `ObservationCfg`. Joint data via `Articulation.data.joint_pos`. |
+| **Action output** | `actions`: float[horizon x action_dim], e.g. `(10, 7)`. No metadata on semantics. | float[horizon x action_dim]. Same shape convention as OpenPI. | Pickle-serialized action chunk (float[actions_per_chunk x action_dim]). Each action timestamped. Chunk merging via configurable aggregation (weighted_average, latest_only, average, conservative). | GPU tensor `action` applied via `env.step(action)`. Shape defined by `action_space` config. |
+| **Model loading** | `TrainConfig` Python object + per-robot `*Inputs`/`*Outputs` adapter classes. `norm_stats.json` per dataset. | HF `config.json` + safetensors. Model-specific code in vLLM-Omni model registry. | `policy_class.from_pretrained()` + serialized `policy_preprocessor.json` / `policy_postprocessor.json` pipelines with companion safetensors for normalization stats. Client sends `RemotePolicyConfig` (policy_type, pretrained_path, device) during handshake. | JIT-traced `policy.pt` (PyTorch), ONNX via TensorRT/OnnxRuntime, or direct Python model. |
+| **Schema exchange** | None. Client must know exact field names per robot config. Runtime error on mismatch. | None documented. Client must know model's expected observation format. | Partial. Client sends `RemotePolicyConfig` with `lerobot_features` and `rename_map` during `SendPolicyInstructions` handshake. Server loads checkpoint and validates features. No capability discovery from client side. | None. Observation/action spaces defined in env config, not negotiated. |
+| **Normalization** | Server-side via `norm_stats.json`. Client sends unnormalized state. | Server-side via `_build_norm_buffers`. Quantile normalization was initially broken (returned `None`). | Server-side via serialized preprocessor/postprocessor pipelines. Normalization strategy declared in `policy_preprocessor.json` (step `normalizer_processor`), statistics in companion safetensors. Denormalization in `policy_postprocessor.json` (`unnormalizer_processor`). | Baked into ONNX graph (Sub/Div/BatchNorm ops) or handled in env wrapper. |
 
-**Sources**: [OpenPI remote inference docs](https://github.com/Physical-Intelligence/openpi/blob/main/docs/remote_inference.md), [vLLM-Omni RFC #6524](https://github.com/vllm-project/vllm-omni/issues/6524), [Isaac Lab policy deployment](https://docs.isaacsim.omniverse.nvidia.com/6.0.0/isaac_lab_tutorials/tutorial_policy_deployment.html), [Isaac ROS Deploy](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_deploy)
+**Sources**: [OpenPI remote inference docs](https://github.com/Physical-Intelligence/openpi/blob/main/docs/remote_inference.md), [vLLM-Omni RFC #6524](https://github.com/vllm-project/vllm-omni/issues/6524), [LeRobot async inference docs](https://huggingface.co/docs/lerobot/en/async), [HF Blog — Async Robot Inference](https://huggingface.co/blog/async-robot-inference), [Isaac Lab policy deployment](https://docs.isaacsim.omniverse.nvidia.com/6.0.0/isaac_lab_tutorials/tutorial_policy_deployment.html), [Isaac ROS Deploy](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_deploy)
 
-### Key observation
+### Key observations
 
-OpenPI and vLLM-Omni converge on the same wire format (observation dict with image/state/prompt keys, action chunk output). vLLM-Omni explicitly targets OpenPI compatibility via its `/v1/realtime/robot/openpi` endpoint. Isaac Lab operates in-process with GPU tensors, a fundamentally different pattern designed for simulation rather than real-time serving.
+OpenPI, vLLM-Omni, and SGLang converge on the same wire format (observation dict with image/state/prompt keys, action chunk output) over WebSocket or HTTP. LeRobot's PolicyServer takes a fundamentally different approach: gRPC transport with pickle-serialized payloads, single-client design, and a client-driven handshake that configures the server at connection time. Isaac Lab operates in-process with GPU tensors, designed for simulation rather than real-time serving.
+
+LeRobot's PolicyServer is the only server where the full pre/post-processing pipeline is **serialized as declarative metadata** (`policy_preprocessor.json` / `policy_postprocessor.json`) rather than hardcoded in server source code. This makes the processing chain checkpoint-portable — any server that understands the pipeline format can reproduce the exact same preprocessing. However, its pickle-based wire format is a known security vulnerability ([CVE-2026-25874](https://github.com/huggingface/lerobot/issues/3047)) and interoperability barrier ([strands-labs/robots#4257](https://github.com/strands-labs/robots/issues/4257)), with a replacement ([PR #3048](https://github.com/huggingface/lerobot/pull/3048) — safetensors + JSON payload encoding) open but unmerged for ~7 months, now on the [v0.7.0 roadmap](https://github.com/huggingface/lerobot/issues/3832).
 
 ---
 
@@ -157,7 +159,7 @@ Four VLA models compared on their input/output contracts.
 | **Dataset hosting** | HuggingFace Hub | 16K+ robot datasets. LeRobot, GR00T, DreamZero, DROID all publish here. |
 | **Model hosting** | HuggingFace Hub | All major VLA models publish checkpoints on HF Hub. |
 | **Config format** | JSON (`config.json`) | Every VLA model uses HF-convention `config.json` for policy config. |
-| **Serving protocol** | OpenPI WebSocket convention | vLLM-Omni explicitly targets OpenPI compatibility. Emerging as the VLA serving standard. |
+| **Serving protocol** | OpenPI WebSocket convention (for multi-model/production serving) | vLLM-Omni and SGLang explicitly target OpenPI compatibility. LeRobot uses gRPC for single-client on-robot deployment — different niche. |
 | **Training framework** | LeRobot (for fine-tuning) | pi0.5, DreamZero, GR00T all support LeRobot datasets for training. |
 | **RL env API** | Gymnasium | Isaac Lab, ManiSkill, robosuite all expose Gymnasium-compatible interfaces. |
 
@@ -194,7 +196,7 @@ Four VLA models compared on their input/output contracts.
 | **Action representation** | EE delta (pi0.5, OXE), joint velocity (DreamZero), joint position (GR00T), learned tokenization (FAST+) | No convergence. Research papers propose unification (CalibAll, UniAct) but none adopted. |
 | **ROSbag-to-LeRobot conversion** | Rosetta, Rebake, lerobot_ros, Convert_data, Forge Robotics, leros2 | 6+ tools, none dominant. LeRobot RFC #4368 discusses native ROS 2 support but no resolution. |
 | **Simulation platform** | Isaac Lab, MuJoCo (dm_control), Gazebo (ROS 2), ManiSkill/SAPIEN | Isaac Lab gaining momentum (GPU acceleration, GR00T integration). MuJoCo dominant in research. No interop standard between them. |
-| **VLA serving** | OpenPI, vLLM-Omni, direct deployment (Isaac ROS) | OpenPI convention emerging but not formalized as a spec. vLLM-Omni adopting it adds momentum. |
+| **VLA serving** | OpenPI, vLLM-Omni, SGLang, LeRobot PolicyServer, direct deployment (Isaac ROS) | OpenPI convention emerging for production/multi-model serving (vLLM-Omni, SGLang adopt it). LeRobot PolicyServer occupies a different niche: single-client on-robot gRPC with serialized processing pipelines. |
 
 ### Declining
 
@@ -208,4 +210,4 @@ Four VLA models compared on their input/output contracts.
 
 ## Summary
 
-The Physical AI ecosystem is converging on a clear stack for **storage and hosting** (SafeTensors + MP4 + LeRobot v3 + HF Hub) and an emerging standard for **serving** (OpenPI convention). The divergence is in the **semantic layer**: what actions mean, how normalization works, which joints map to which indices, and what cameras are called. This semantic gap cannot be solved by format convergence alone -- it requires explicit metadata declarations that no current standard provides.
+The Physical AI ecosystem is converging on a clear stack for **storage and hosting** (SafeTensors + MP4 + LeRobot v3 + HF Hub) and an emerging standard for **production serving** (OpenPI convention, adopted by vLLM-Omni and SGLang). LeRobot's PolicyServer occupies a complementary niche — single-client on-robot deployment via gRPC — and is the only server where the full processing pipeline is declaratively described (serialized JSON step lists) rather than hardcoded. The divergence remains in the **semantic layer**: what actions mean, how normalization works, which joints map to which indices, and what cameras are called. This semantic gap cannot be solved by format convergence alone — it requires explicit metadata declarations that no current standard provides.

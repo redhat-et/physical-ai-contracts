@@ -183,12 +183,64 @@ For `ACTConfig`:
 
 Source: [LeRobot policy configs](https://github.com/huggingface/lerobot/tree/main/lerobot/common/policies)
 
+### Serialized processing pipelines (preprocessor / postprocessor)
+
+LeRobot checkpoints (as of mid-2026) ship serialized processing pipelines alongside the model weights. These are the most complete declarative inference-time metadata in any surveyed ecosystem.
+
+**`policy_preprocessor.json`** — an ordered list of named processing steps applied to observations before model forward pass:
+
+| Step (registry_name) | Purpose | Config fields |
+| --- | --- | --- |
+| `rename_observations_processor` | Remap client observation keys to model-expected keys | `rename_map` (dict) |
+| `to_batch_processor` | Convert single observation to batch format | (none) |
+| `relative_actions_processor` | Convert absolute actions to relative (if enabled) | `enabled`, `exclude_joints`, `action_names` |
+| `normalizer_processor` | Normalize inputs using learned statistics | `features` (name → {type, shape}), `norm_map` (modality → strategy), `eps`. Companion `state_file` (safetensors) with quantile/mean/std values. |
+| `pi05_prepare_state_tokenizer_processor_step` | Architecture-specific state preparation | (none) |
+| `tokenizer_processor` | Tokenize language instruction | `tokenizer_name`, `max_length`, `padding`, `truncation` |
+| `device_processor` | Move tensors to target device | `device`, `float_dtype` |
+
+**`policy_postprocessor.json`** — reverse pipeline for model outputs:
+
+| Step (registry_name) | Purpose | Config fields |
+| --- | --- | --- |
+| `unnormalizer_processor` | Denormalize action outputs using learned statistics | `features` (action shape/type), `norm_map`, `eps`. Companion `state_file` (safetensors). |
+| `absolute_actions_processor` | Convert relative actions back to absolute (if enabled) | `enabled` |
+| `device_processor` | Move to CPU | `device`, `float_dtype` |
+
+Each step has a `registry_name` (resolved to a Python class at runtime) and a `config` dict. Steps that carry learned state (normalization statistics) reference a companion safetensors file via `state_file`.
+
+**Concrete example** from [`execbat/pi05-robot-finetuned`](https://huggingface.co/execbat/pi05-robot-finetuned): 7-step preprocessor (rename → batch → relative_actions[disabled] → normalize[QUANTILES for state/action, IDENTITY for images] → pi05_state_prep → tokenize[PaliGemma] → device[cuda]), 3-step postprocessor (unnormalize[QUANTILES] → absolute_actions[disabled] → device[cpu]).
+
+**Significance**: This is the only ecosystem where the full inference-time processing chain is **declaratively described and shipped with the checkpoint**. OpenPI, vLLM-Omni, and SGLang all reconstruct equivalent pipelines from hardcoded server code. A server that understands LeRobot's pipeline format can reproduce the exact preprocessing without model-specific code — addressing the "training config is richer than checkpoint metadata" gap.
+
+**Limitations**: The `registry_name` values require a LeRobot Python runtime to resolve — they're not a standalone specification. Architecture-specific steps (e.g., `pi05_prepare_state_tokenizer_processor_step`) embed model-family knowledge. The format is a LeRobot implementation detail, not a published standard.
+
+Source: [execbat/pi05-robot-finetuned](https://huggingface.co/execbat/pi05-robot-finetuned), [LeRobot inference docs](https://huggingface.co/docs/lerobot/main/inference)
+
+### LeRobot PolicyServer (async inference)
+
+LeRobot also provides a **gRPC-based PolicyServer** for distributed inference, introduced with SmolVLA. The server starts empty; the client configures it via a `SendPolicyInstructions` handshake that sends a `RemotePolicyConfig` (policy_type, pretrained path, device, actions_per_chunk, features, rename_map). The server then loads the checkpoint and its processing pipelines.
+
+**gRPC service** (`AsyncInference`): 4 RPCs — `Ready` (health check), `SendPolicyInstructions` (configure server), `SendObservations` (stream observations), `GetActions` (receive action chunks). All data fields use **pickle serialization** over gRPC `bytes` — the protobuf messages are opaque byte blobs, not structured.
+
+**Action chunking features**: The client maintains a local action queue and merges overlapping chunks using configurable aggregation (weighted_average: 0.3×old + 0.7×new, latest_only, average, conservative). Real-Time Chunking (RTC) adds a guidance term during flow-matching denoising for chunk-to-chunk consistency.
+
+**Security**: Pickle-over-gRPC is a known critical vulnerability ([CVE-2026-25874](https://github.com/huggingface/lerobot/issues/3047), CVSS 9.3/9.8, filed 2026-02-27). Three of four `AsyncInference` RPC handlers pass attacker-controlled bytes into `pickle.loads()` with `# nosec` markers. No authentication, no TLS by default. The [strands-labs/robots](https://github.com/strands-labs/robots/issues/4257) project cannot build a thin gRPC client because the wire format is pickle, not structured protobuf. They tested v0.6.1 and confirmed pickle is still the wire format on both directions.
+
+**Planned replacement** ([PR #3048](https://github.com/huggingface/lerobot/pull/3048)): A `safe_serialization.py` module replaces pickle with a binary wire format: `[4-byte JSON length][JSON metadata][safetensors tensor data]`. Three serialization pairs: policy config (JSON-only), observations (safetensors + JSON metadata preserving numpy/torch types), actions (safetensors + JSON for timestamps/timesteps). The gRPC service definition and protobuf `bytes` fields remain unchanged — only the payload encoding inside them changes. This is a security fix, not an interoperability fix: the wire format becomes safe to deserialize but remains structurally opaque (a length-prefixed binary blob, not typed protobuf fields). A client still cannot inspect the proto schema to understand what the server expects.
+
+**Status**: PR #3048 has been open and unmerged for ~7 months (since 2026-02-27). v0.6.0 (July 2026) shipped without it. The [v0.7.0 roadmap](https://github.com/huggingface/lerobot/issues/3832) lists it as team item "RUN-04: Secure and converge remote inference" — not yet started.
+
+**Contrast with OpenPI/vLLM-Omni/SGLang**: LeRobot's PolicyServer is designed for single-robot, single-client deployment. No batching, no multi-model, no multiplexing. The processing pipeline comes from the checkpoint's serialized JSON files, not from server-side adapter code. The other servers use HTTP/WebSocket with msgpack- or JSON-encoded payloads — language-agnostic and inspectable, though with their own interoperability issues (three msgpack numpy dialects, see [deployment-topology.md Section 3.1](deployment-topology.md)).
+
+Source: [LeRobot async inference docs](https://huggingface.co/docs/lerobot/en/async), [HF Blog — Async Robot Inference](https://huggingface.co/blog/async-robot-inference), [LeRobot RTC docs](https://huggingface.co/docs/lerobot/rtc), [CVE-2026-25874](https://github.com/huggingface/lerobot/issues/3047), [PR #3048](https://github.com/huggingface/lerobot/pull/3048), [v0.7.0 roadmap](https://github.com/huggingface/lerobot/issues/3832), [strands-labs/robots #4257](https://github.com/strands-labs/robots/issues/4257)
+
 ### Normalization details
 
 Normalization is stored in two layers:
 
-1. **Strategy declaration** in `config.json`: `normalization_mapping` maps feature types (`VISUAL`, `STATE`, `ACTION`) to strategies (`IDENTITY`, `MEAN_STD`, `QUANTILE`).
-2. **Statistics values** in companion files:
+1. **Strategy declaration** in `config.json`: `normalization_mapping` maps feature types (`VISUAL`, `STATE`, `ACTION`) to strategies (`IDENTITY`, `MEAN_STD`, `QUANTILE`). Also declared in `policy_preprocessor.json` step config (`norm_map`).
+2. **Statistics values** in companion safetensors files:
    - `policy_preprocessor_step_N_normalizer_processor.safetensors` — normalization stats for inputs
    - `policy_postprocessor_step_0_unnormalizer_processor.safetensors` — denormalization stats for outputs
    - OR `norm_stats.json` for OpenPI-compatible checkpoints
@@ -202,13 +254,16 @@ Normalization is stored in two layers:
 
 Source: [LeRobot v3 dataset docs](https://huggingface.co/docs/lerobot/lerobot-dataset-v3), [data-formats survey section 1](data-formats-at-interfaces.md)
 
-### Gaps relative to CheckpointDescriptor
+### Gaps relative to CheckpointDescriptor / InferenceServerDescriptor
 
 - **No action semantics**: `output_features` declares shape `[7]` but not what each dimension means.
 - **No camera role annotations**: camera slot names (e.g., `base_0_rgb`, `left_wrist_0_rgb`) follow a naming convention but lack formal role metadata.
-- **No embodiment reference**: nothing in the config declares which robot(s) this checkpoint was trained on.
+- **No embodiment reference**: nothing in the config declares which robot(s) this checkpoint was trained on. Robot identity only appears in HF model card tags (e.g., `robot:Franka-Panda`).
 - **No fine-tuning lineage in config**: `base_model` lives in the HF model card, not in `config.json`.
 - **Schema varies by architecture**: `Pi0Config`, `DiffusionConfig`, and `ACTConfig` have different field sets with no common base schema.
+- **Pipeline steps are runtime-bound**: `registry_name` values require LeRobot Python to resolve. Not a standalone spec.
+- **No server introspection**: the PolicyServer has no capability discovery endpoint. The client must know what policy to load.
+- **Wire format is opaque**: pickle-serialized gRPC payloads prevent cross-language clients and pose security risks (CVE-2026-25874). The planned replacement ([PR #3048](https://github.com/huggingface/lerobot/pull/3048)) fixes security but keeps the format opaque — safetensors+JSON inside `bytes` fields, not typed protobuf messages. Still unmerged after 7 months.
 
 ---
 
@@ -531,32 +586,35 @@ The **profile selection pattern** (matching model requirements to available hard
 
 ### Coverage matrix
 
-| Property needed | HF Cards | OpenPI config | LeRobot config | vLLM-Omni | SGLang | LEAPP | ONNX | NIM |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| **Architecture / model family** | `pipeline_tag` | `type` | `type` | model registry | checkpoint config | N/A | `producer_name` | N/A |
-| **Base model / lineage** | `base_model` | N/A | N/A (in card) | N/A | N/A | N/A | N/A | N/A |
-| **Input tensor shapes** | No | `input_features` | `input_shapes` | processor config | checkpoint config | ONNX graph | Yes | No |
-| **Output tensor shapes** | No | `output_features` | `output_shapes` | processor config | `action_dim` | ONNX graph | Yes | No |
-| **Action chunk horizon** | No | `n_action_steps` | `n_action_steps` / `horizon` | N/A | `action_horizon` | N/A | N/A | No |
-| **Action semantics (what dims mean)** | No | No | No | No | No | **Yes** (`kind`, `element_names`) | No | No |
-| **Normalization strategy** | No | `normalization_mapping` | `normalization_mapping` | code | code | Baked into graph | No | No |
-| **Normalization stats** | No | `norm_stats.json` | processor safetensors | `_build_norm_buffers` | code | Baked into graph | No | No |
-| **Camera slot names** | No | `input_features` | `input_features` | processor | `camera_names` | N/A | No | No |
-| **Camera roles (wrist/world)** | No | Code only | Naming convention | Code only | Naming convention | N/A | No | No |
-| **Supported embodiments** | No | Code (class name) | No | Code (class name) | No | `--embodiment_tag` | No | No |
-| **Server introspection API** | N/A | **No** | N/A | **No** | **Yes** (`/v1/actions/metadata`) | Via Triton | N/A | N/A |
-| **Deployment hardware profile** | No | No | No | No | No | No | No | **Yes** |
+| Property needed | HF Cards | OpenPI config | LeRobot config | LeRobot PolicyServer | vLLM-Omni | SGLang | LEAPP | ONNX | NIM |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **Architecture / model family** | `pipeline_tag` | `type` | `type` | From checkpoint | model registry | checkpoint config | N/A | `producer_name` | N/A |
+| **Base model / lineage** | `base_model` | N/A | N/A (in card) | N/A | N/A | N/A | N/A | N/A | N/A |
+| **Input tensor shapes** | No | `input_features` | `input_shapes` | From checkpoint `input_features` | processor config | checkpoint config | ONNX graph | Yes | No |
+| **Output tensor shapes** | No | `output_features` | `output_shapes` | From checkpoint `output_features` | processor config | `action_dim` | ONNX graph | Yes | No |
+| **Action chunk horizon** | No | `n_action_steps` | `n_action_steps` / `horizon` | Client-set `actions_per_chunk` | N/A | `action_horizon` | N/A | N/A | No |
+| **Action semantics (what dims mean)** | No | No | No | No | No | No | **Yes** (`kind`, `element_names`) | No | No |
+| **Normalization strategy** | No | `normalization_mapping` | `normalization_mapping` | **Yes** (`policy_preprocessor.json` step config) | code | code | Baked into graph | No | No |
+| **Normalization stats** | No | `norm_stats.json` | processor safetensors | **Yes** (processor safetensors, loaded by pipeline) | `_build_norm_buffers` | code | Baked into graph | No | No |
+| **Processing pipeline** | No | Code | Code | **Yes** (`policy_preprocessor.json` + `policy_postprocessor.json`) | Code | Code | Baked into graph | No | No |
+| **Camera slot names** | No | `input_features` | `input_features` | From checkpoint + client `rename_map` | processor | `camera_names` | N/A | No | No |
+| **Camera roles (wrist/world)** | No | Code only | Naming convention | Naming convention | Code only | Naming convention | N/A | No | No |
+| **Supported embodiments** | No | Code (class name) | No | No | Code (class name) | No | `--embodiment_tag` | No | No |
+| **Server introspection API** | N/A | **No** | N/A | **No** (client configures server) | **No** | **Yes** (`/v1/actions/metadata`) | Via Triton | N/A | N/A |
+| **Deployment hardware profile** | No | No | No | No | No | No | No | No | **Yes** |
 
 ### Key findings
 
-1. **LeRobot's `config.json` is the richest existing checkpoint metadata** — it contains normalization strategy, feature shapes, action chunk parameters, and camera slot names. But it has no formal schema, no action semantics, no embodiment reference, and varies by architecture.
+1. **LeRobot's `config.json` + processing pipelines are the richest existing checkpoint metadata** — `config.json` contains normalization strategy, feature shapes, action chunk parameters, and camera slot names. The `policy_preprocessor.json` / `policy_postprocessor.json` files go further, serializing the full inference-time processing chain as ordered step lists with companion safetensors for learned statistics. But there is no formal schema, no action semantics, no embodiment reference, and the pipeline step names are bound to LeRobot's Python runtime.
 
-2. **SGLang's `/v1/actions/metadata` is the only server introspection API** — returning structured metadata including `input` (image_keys, image_size, state_dim), `output` (action_type, action_horizon, action_dim, padded_action_dim, dtype), `capabilities` (which API surfaces are available), and runtime config. This is the closest existing implementation to an InferenceServerDescriptor. But it omits action semantics (what each dimension means), normalization details, and supported embodiments.
+2. **SGLang's `/v1/actions/metadata` is the only server introspection API** — returning structured metadata including `input` (image_keys, image_size, state_dim), `output` (action_type, action_horizon, action_dim, padded_action_dim, dtype), `capabilities` (which API surfaces are available), and runtime config. This is the closest existing implementation to an InferenceServerDescriptor. But it omits action semantics (what each dimension means), normalization details, and supported embodiments. LeRobot's PolicyServer has no introspection — it inverts the pattern (client configures server).
 
 3. **LEAPP's tensor semantics are the only action semantics metadata** — `kind`, `element_names`, and extensible `extra` fields. But they're NVIDIA-specific, don't survive ONNX export, and don't cover observation/camera semantics.
 
-4. **Adapter transforms are the biggest gap across all communities** — the robot-specific transforms (camera remapping, joint sign flips, gripper conversion) that determine whether a checkpoint actually works with a given robot are hardcoded as Python constants in every server implementation, with no declarative representation anywhere.
+4. **Adapter transforms are the biggest gap across all communities** — the robot-specific transforms (camera remapping, joint sign flips, gripper conversion) that determine whether a checkpoint actually works with a given robot are hardcoded as Python constants in every server implementation, with no declarative representation anywhere. LeRobot's serialized pipelines partially address this for normalization and tokenization, but camera remapping and joint reordering are still handled via the client-provided `rename_map` (a flat dict, not a rich descriptor).
 
-5. **No community declares embodiment compatibility** — which robot(s) a checkpoint supports is determined by which adapter classes exist in server source code, not by metadata attached to the checkpoint.
+5. **No community declares embodiment compatibility** — which robot(s) a checkpoint supports is determined by which adapter classes exist in server source code, not by metadata attached to the checkpoint. LeRobot model cards may carry tags (e.g., `robot:Franka-Panda`) but these are free-form strings with no validation or structured querying.
 
-6. **Normalization is handled three different ways**: LeRobot/OpenPI store external stats files; LEAPP/WBC bake normalization into the ONNX graph; vLLM-Omni reimplements normalization in server code. No metadata convention declares which approach a checkpoint uses.
+6. **Normalization is now handled four different ways**: LeRobot checkpoints ship serialized processor pipelines with safetensors stats; OpenPI stores external `norm_stats.json`; LEAPP/WBC bake normalization into the ONNX graph; vLLM-Omni reimplements normalization in server code. No metadata convention declares which approach a checkpoint uses.
+
+7. **LeRobot's serialized processing pipelines are a step toward TransformDescriptor** — the `policy_preprocessor.json` / `policy_postprocessor.json` format (ordered step list with registry names, configs, and state files) is conceptually close to the TransformDescriptor in our data model. Key gap: step names are runtime-bound (`registry_name` requires LeRobot Python to resolve), not a standalone specification that other servers could consume.

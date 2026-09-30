@@ -1,6 +1,6 @@
 # Prior Art Survey — Index & Summary
 
-**Date**: 2026-09-22
+**Date**: 2026-09-30 (updated; originally 2026-09-22)
 **Jira**: [OCTOET-2177](https://redhat.atlassian.net/browse/OCTOET-2177) — Schema Research & Prior Art Survey
 **Status**: 7 of 8 Definition of Done items complete. Remaining: peer review.
 
@@ -26,9 +26,11 @@ We surveyed 20+ existing schemas and metadata standards across the Physical AI s
 
 7. **LeRobot v3 `info.json` is the de facto dataset metadata standard** (16K+ datasets), but it's a Python dataclass convention, not a broader HF or community standard.
 
-8. **SGLang's `/v1/actions/metadata` is the only server introspection API.** No other inference server exposes structured metadata about its capabilities.
+8. **SGLang's `/v1/actions/metadata` is the only server introspection API.** No other inference server exposes structured metadata about its capabilities. LeRobot's PolicyServer inverts this — the client configures the server, rather than discovering its capabilities.
 
-9. **RHOAI platform components can store but not validate Physical AI metadata.** Model Registry supports JSON custom properties; EvalHub/TrainingHub pass opaque file paths. A contract schema would enable structured validation.
+9. **LeRobot's serialized processing pipelines (`policy_preprocessor.json` / `policy_postprocessor.json`) are the only declarative inference-time processing chain** shipped with a checkpoint. They address the "training config is richer than checkpoint metadata" gap, but step names are bound to LeRobot's Python runtime.
+
+10. **RHOAI platform components can store but not validate Physical AI metadata.** Model Registry supports JSON custom properties; EvalHub/TrainingHub pass opaque file paths. A contract schema would enable structured validation.
 
 ### Three categories of spec work
 
@@ -115,7 +117,7 @@ These survey specific communities or topics in depth, covering standards not ful
 
 ## Communities surveyed
 
-LeRobot, OpenPI, SGLang, vLLM-Omni, GR00T, LEAPP, ROS 2 / ros2_control, URDF, MJCF, OpenUSD / SimReady, REP-0158, Isaac Lab, OXE (Open X-Embodiment), Croissant (MLCommons), Rosetta, DROID, LIBERO, BridgeData2, MLflow, ONNX, HF Hub, NIM, SafeTensors, KFP v2, Gymnasium, MuJoCo Menagerie, RHOAI (SDG Hub, EvalHub, Training Hub, Model Registry).
+LeRobot (dataset format, training framework, PolicyServer/async inference), OpenPI, SGLang, vLLM-Omni, GR00T, LEAPP, ROS 2 / ros2_control, URDF, MJCF, OpenUSD / SimReady, REP-0158, Isaac Lab, OXE (Open X-Embodiment), Croissant (MLCommons), Rosetta, DROID, LIBERO, BridgeData2, MLflow, ONNX, HF Hub, NIM, SafeTensors, KFP v2, Gymnasium, MuJoCo Menagerie, RHOAI (SDG Hub, EvalHub, Training Hub, Model Registry).
 
 ## Remaining work
 
