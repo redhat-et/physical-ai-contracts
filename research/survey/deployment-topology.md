@@ -79,6 +79,8 @@ vLLM-Omni **does** have per-robot adapter code (e.g., `DroidTransform`), indepen
 
 For humanoids, a two-tier system applies: GR00T VLA at ~10 Hz produces latent action tokens, SONIC whole-body controller at 50-120 Hz decodes them into motor commands. SONIC has its own C++/TensorRT deployment stack.
 
+**Dual-policy composition**: The GR00T E2E deployment composes two concurrent policies on Jetson AGX Thor via CUDA MPS GPU partitioning: AGILE WBC (lower-body balance, always active) and GR00T (upper-body manipulation, controlled via `blend_ratio`). Each has an independent safety controller node (`/safety_controller_lower_body`, `/safety_controller_upper_body`) with separate `blend_ratio` parameters (0.0 = disabled → 1.0 = fully active, smooth ramping). This is a deployment topology pattern distinct from all other ecosystems surveyed: two models share GPU hardware with separate safety envelopes and independent control authority over disjoint joint sets.
+
 **Sources**: [LEAPP docs](https://nvidia-isaac.github.io/leapp/), [LEAPP tensor semantics](https://nvidia-isaac.github.io/leapp/semantics/usage.html), [isaac_ros_deploy](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_deploy), [GR00T E2E deployment guide](https://docs.nvidia.com/learning/physical-ai/gr00t-e2e-workflow/latest/real-robot-workflow/real-deployment.html)
 
 ### 2.4 LeRobot PolicyServer: Single-client gRPC, serialized pipelines
@@ -360,7 +362,7 @@ In NVIDIA's on-device stack (isaac_ros_deploy), the `InferenceController` is a r
 2. Runs the full LEAPP pipeline via Triton (preprocessing + inference + postprocessing)
 3. Writes targets to ros2_control command interfaces (shared memory)
 
-This collapses Policy Engine + Robot Controller into one process, eliminating: the WebSocket/HTTP overhead, the OpenPI-to-ROS2 bridge, and the ROS 2 topic overhead between adapter and controller. The only remaining ROS 2 boundary is ros2_control's hardware abstraction layer (in-process shared memory).
+This collapses Policy Engine + Robot Controller into one process, eliminating: the WebSocket/HTTP overhead, the OpenPI-to-ROS2 bridge, and the ROS 2 topic overhead between adapter and controller. The only remaining ROS 2 boundary is ros2_control's hardware abstraction layer (in-process shared memory). The sim/real backend switch is achieved through a single `hardware_type` launch parameter that selects which ros2_control `SystemInterface` plugin loads: for `real`, hardware drivers publish sensor data and accept commands; for `mujoco`, the `mujoco_ros2_control` plugin presents MuJoCo as hardware to ros2_control. Source: [GR00T E2E Deployment](https://docs.nvidia.com/learning/physical-ai/gr00t-e2e-workflow/latest/real-robot-workflow/real-deployment.html)
 
 **Trade-off**: the model must run on-device (Jetson Thor or similar). No powerful GPU on the robot → must fall back to remote inference with all its protocol overhead.
 

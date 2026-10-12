@@ -170,7 +170,27 @@ An emerging ecosystem of tools validates LeRobot datasets, but all are early-sta
 - NVIDIA GR00T requires LeRobot v2 format plus an additional `meta/modality.json` not in standard LeRobot. Source: [Isaac-GR00T data prep](https://github.com/NVIDIA/Isaac-GR00T/blob/main/getting_started/data_preparation.md)
 - This is an example of the fragmentation problem: GR00T adds its own metadata file on top of LeRobot, creating a format variant.
 
-**Assessment**: NVIDIA's efforts address simulation asset interoperability (SimReady, USDPhysics) and inference deployment (NIM), but not training-time model-dataset compatibility. Their GR00T integration actually *creates* interoperability friction by requiring a non-standard metadata file.
+#### Isaac ROS Deploy + LEAPP
+
+Isaac ROS Deploy (released April 2026) deploys LEAPP bundles on real and simulated robots via ROS 2. LEAPP's `pipeline.yaml` is the strongest existing policy contract: it declares tensor shapes, dtypes, semantic `kind` annotations, per-dimension `element_names` (solving the joint-ordering problem), temporal semantics for action chunks, dataflow graph topology, execution frequency, and export provenance. Isaac ROS Deploy's converter subsystem uses these annotations to automatically route tensor values to ROS 2 topics.
+
+The sim/real abstraction is achieved through **ros2_control's hardware interface system**, not through Isaac ROS Deploy itself. A `hardware_type` launch parameter selects which `SystemInterface` plugin loads (real hardware drivers vs. `mujoco_ros2_control`). The same controllers, policy nodes, and launch graph work regardless of backend.
+
+The GR00T E2E workflow also introduces dual-policy composition: AGILE WBC (lower-body balance) and GR00T (upper-body manipulation) run concurrently via CUDA MPS GPU partitioning, with independent safety controllers and `blend_ratio` parameters.
+
+Source: [Isaac ROS Deploy](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_deploy/index.html), [LEAPP docs](https://nvidia-isaac.github.io/leapp/), [GR00T E2E Deployment](https://docs.nvidia.com/learning/physical-ai/gr00t-e2e-workflow/latest/real-robot-workflow/real-deployment.html)
+
+#### RoboVerse/MetaSim (simulation abstraction)
+
+RoboVerse's MetaSim (30+ authors, Apache 2.0, RSS 2025) provides a unified interface across MuJoCo, Isaac Sim/Isaac Lab, SAPIEN, Genesis, PyBullet, and Newton. Three-layer architecture: simulator-agnostic scenario config → backend-specific handlers that compile to native formats (MJCF, USD, URDF) → Gym-style task env API.
+
+Important caveat: the cross-simulator equivalence claim has known limitations — different physics engines produce different trajectories from identical initial states. This is acknowledged in the RoboVerse paper.
+
+MetaSim is a community project, not an NVIDIA product. It addresses **simulation-level** abstraction (same task across simulators), complementary to Isaac ROS Deploy's **deployment-level** abstraction (same policy across sim/real).
+
+Source: [RoboVerse/MetaSim](https://github.com/RoboVerseOrg/MetaSim), [RoboVerse paper](https://arxiv.org/html/2504.18904v1)
+
+**Assessment**: NVIDIA's efforts address simulation asset interoperability (SimReady, USDPhysics), inference deployment (NIM), and now policy deployment contracts (LEAPP pipeline.yaml). The GR00T modality config, while still NVIDIA-specific and non-declarative, functions as a de facto embodiment contract that is richer than previously characterized. However, training-time model-dataset compatibility remains unaddressed — the contract gaps are between dataset↔policy and robot↔policy, not at the policy→deployment boundary where LEAPP operates.
 
 ---
 
@@ -341,6 +361,17 @@ No community owns the question: "Can this model train on this dataset for this r
 - [NIM model profiles docs](https://docs.nvidia.com/nim/large-language-models/latest/deployment/model-profiles-and-selection.html)
 - [Isaac-GR00T data preparation](https://github.com/NVIDIA/Isaac-GR00T/blob/main/getting_started/data_preparation.md)
 - [SimReady Foundation](https://nvidia.github.io/simready-foundation/latest/)
+
+### Isaac ROS Deploy + LEAPP + RoboVerse
+
+- [Isaac ROS Deploy docs](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_deploy/index.html)
+- [Isaac ROS Deploy GitHub](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_deploy)
+- [LEAPP docs](https://nvidia-isaac.github.io/leapp/)
+- [LEAPP GitHub](https://github.com/nvidia-isaac/leapp)
+- [GR00T E2E workflow tutorial](https://docs.nvidia.com/learning/physical-ai/gr00t-e2e-workflow/latest/)
+- [GR00T E2E blog post](https://developer.nvidia.com/blog/develop-humanoid-robot-policies-end-to-end-with-nvidia-isaac-gr00t/)
+- [RoboVerse/MetaSim GitHub](https://github.com/RoboVerseOrg/MetaSim)
+- [RoboVerse paper](https://arxiv.org/html/2504.18904v1)
 
 ### Standards & Formats
 

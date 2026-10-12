@@ -102,6 +102,8 @@ These survey specific communities or topics in depth, covering standards not ful
 | [robot-environment.md](robot-environment.md) | 513 | URDF, MJCF, OpenUSD, REP-0158, SimReady, ros2_control, Gymnasium, MuJoCo Menagerie — robot/environment description standards. Includes joint-ordering and camera-mapping problem analysis. |
 | [workflow-interop.md](workflow-interop.md) | 296 | OpenPI protocol, KFP v2 artifact types, agentskills.io, Gymnasium, manipulation benchmarks |
 | [rhoai-hubs.md](rhoai-hubs.md) | 364 | RHOAI SDG Hub, EvalHub, Training Hub, Model Registry, vLLM-Omni, cross-hub data flows |
+| [nvidia-e2e-workflow-notes.md](nvidia-e2e-workflow-notes.md) | 295 | GR00T E2E workflow data models: 5 format boundaries (HDF5/MCAP → LeRobot → checkpoint → LEAPP → ROS 2), modality config as embodiment contract, implicit consistency requirements, sim vs. real data model divergence |
+| [nvidia-isaac-ros-deploy-notes.md](nvidia-isaac-ros-deploy-notes.md) | 287 | LEAPP bundle format (pipeline.yaml schema with tensor semantic annotations), Isaac ROS Deploy architecture, sim/real abstraction via ros2_control, RoboVerse/MetaSim |
 
 ### Analysis & synthesis
 
@@ -117,7 +119,7 @@ These survey specific communities or topics in depth, covering standards not ful
 
 ## Communities surveyed
 
-LeRobot (dataset format, training framework, PolicyServer/async inference), OpenPI, SGLang, vLLM-Omni, GR00T, LEAPP, ROS 2 / ros2_control, URDF, MJCF, OpenUSD / SimReady, REP-0158, Isaac Lab, OXE (Open X-Embodiment), Croissant (MLCommons), Rosetta, DROID, LIBERO, BridgeData2, MLflow, ONNX, HF Hub, NIM, SafeTensors, KFP v2, Gymnasium, MuJoCo Menagerie, RHOAI (SDG Hub, EvalHub, Training Hub, Model Registry).
+LeRobot (dataset format, training framework, PolicyServer/async inference), OpenPI, SGLang, vLLM-Omni, GR00T, LEAPP, ROS 2 / ros2_control, URDF, MJCF, OpenUSD / SimReady, REP-0158, Isaac Lab, Isaac ROS Deploy, RoboVerse/MetaSim, OXE (Open X-Embodiment), Croissant (MLCommons), Rosetta, DROID, LIBERO, BridgeData2, MLflow, ONNX, HF Hub, NIM, SafeTensors, KFP v2, Gymnasium, MuJoCo Menagerie, RHOAI (SDG Hub, EvalHub, Training Hub, Model Registry).
 
 ## Remaining work
 

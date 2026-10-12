@@ -41,7 +41,7 @@ Multiple independent developers are building partial solutions (lerobot-doctor, 
 
 ### Partially addressed by existing solutions
 
-1. **Simulation-level interoperability**: Actively converging — REP-0158, `simulation_interfaces`, `ros2_control`, MuJoCo-in-Gazebo. Well covered at the control layer. The ML training layer remains unaddressed.
+1. **Simulation-level interoperability**: Actively converging — REP-0158, `simulation_interfaces`, `ros2_control`, MuJoCo-in-Gazebo. Well covered at the control layer. RoboVerse/MetaSim (30+ authors, Apache 2.0, RSS 2025) adds simulation-level abstraction across 7+ physics engines via a unified scenario config, but acknowledges cross-simulator physics fidelity gaps. Isaac ROS Deploy achieves sim/real abstraction by delegating to ros2_control's hardware interface system (`hardware_type` launch parameter), not by building its own abstraction layer. The ML training layer remains unaddressed.
 
 ---
 
@@ -56,6 +56,7 @@ Multiple independent developers are building partial solutions (lerobot-doctor, 
 | Cross-simulator asset format | REP-0158 (OpenUSD) | Draft | Joint naming, camera conventions, vendor isolation |
 | Simulator control API | ROS 2 `simulation_interfaces` | Growing | Cross-simulator spawn/reset/step |
 | Hardware abstraction | ros2_control | High | Same controller stack across sim + real |
+| Policy deployment contract | LEAPP `pipeline.yaml` | Medium | Tensor shapes, semantic `kind`, `element_names`, graph topology, frequency, provenance. Strongest existing contract mechanism — covers policy→deployment boundary. NVIDIA-specific. |
 | RL environment API | Gymnasium spaces | High | De facto standard for RL |
 | Agent capability metadata | agentskills.io + agent-plugins.org | Medium | Pattern exemplar, not domain-relevant |
 | Dataset discoverability | HF dataset cards + Croissant | High | Discovery, licensing, provenance |
@@ -72,7 +73,7 @@ Ordered by concreteness and tractability (most actionable first):
 
 **Problem**: No metadata declares whether normalization is baked into a checkpoint, external (which stats format?), or computed on load. The strategy (quantile, z-score, identity) and the stats availability (q01/q99 vs. mean/std only) are split across model config and dataset stats with no linking.
 
-**Evidence**: Multiple active LeRobot bugs. Affects every training run. Silent failures (policy trains but performs badly).
+**Evidence**: Multiple active LeRobot bugs. Affects every training run. Silent failures (policy trains but performs badly). The GR00T E2E workflow adds concrete evidence: `action_horizon` must match across the modality config, training config, and server YAML — violating this produces `Action key 'left_arm''s horizon must be 40. Got 50`. This is a consistency problem across three separate files with no cross-validation. Source: [GR00T E2E Sim Evaluation](https://docs.nvidia.com/learning/physical-ai/gr00t-e2e-workflow/latest/simulation-workflow/sim-evaluation.html)
 
 **Why it's in the crack**: Normalization spans model (what strategy does it expect?) and dataset (which stats are available?). Neither side owns the declaration.
 
@@ -92,7 +93,7 @@ Ordered by concreteness and tractability (most actionable first):
 
 **Problem**: No machine-readable way to declare what an action vector means. Is `action[0:3]` a Cartesian delta, absolute EE position, or joint velocity? What coordinate frame? What units? Currently encoded in Python code or paper appendices.
 
-**Evidence**: OXE standardized on 7-DOF EE delta but this doesn't cover humanoids (29+ DOF), whole-body controllers, or joint-space actions. GR00T's `modality.json` adds index-based splitting but no semantics. Multiple research papers (CalibAll, UniAct) attempt to solve this, confirming it's an open problem.
+**Evidence**: OXE standardized on 7-DOF EE delta but this doesn't cover humanoids (29+ DOF), whole-body controllers, or joint-space actions. GR00T's modality config (a Python `register_modality_config()` call, not just `modality.json`) adds per-body-part action representation types (RELATIVE for arms, ABSOLUTE for hands/waist), action horizon, and state/action key groupings. The real-robot MCAP-to-LeRobot converter auto-generates this per dataset. This is richer than previously characterized — it functions as a de facto embodiment contract — but it's not declarative (requires Python execution to inspect) and is NVIDIA-specific. Multiple research papers (CalibAll, UniAct) attempt to solve this, confirming it's an open problem.
 
 **Why it's in the crack**: Action semantics are a model-robot interface concern. Models define expected actions; robots define executable actions. Neither model metadata (ONNX, MLflow, HF cards) nor robot descriptions (URDF, MJCF) currently describe this interface.
 
@@ -128,7 +129,8 @@ Ordered by concreteness and tractability (most actionable first):
 | **knownrobot** | `robot-skill.yaml` manifest with JSON Schema validation for policy-robot compatibility | SO-100/SO-101 specific, zero adoption | 0 |
 | **raftaar** | Predicts policy failure modes from dataset distribution analysis | Research prototype, no cross-dataset validation | 0 |
 | **RDA** | 21-metric dataset quality audit | Quality audit, not compatibility checking | 0 |
-| **GR00T `modality.json`** | Semantic array splitting + video key remapping on top of LeRobot | NVIDIA-specific, LeRobot v2 only | — |
+| **GR00T modality config** | Per-body-part action representation (RELATIVE/ABSOLUTE), action horizon, state/action key groupings. Auto-generated by real-robot converter. Functions as de facto embodiment contract. | Not declarative (Python registration call). NVIDIA-specific. | — |
+| **LEAPP `pipeline.yaml`** | Typed dataflow graph contract: tensor shapes, semantic `kind`, `element_names` (joint ordering), temporal semantics, graph topology, execution frequency, provenance | NVIDIA-specific. Policy→deployment boundary only. No dataset↔policy or robot↔policy coverage. | — |
 | **LeRobot `rename_map`** | Manual camera name remapping at training time | Reactive, buggy, cameras only | — |
 
 ---
@@ -161,7 +163,7 @@ The deployment topology research revealed additional gaps at the **serving and r
 
 **Problem**: 6+ independent ROSbag-to-LeRobot converters exist, each with different resampling strategies for multi-rate sensor data (30 Hz camera, 100 Hz joints). No metadata records which resampling strategy was used, making dataset provenance opaque.
 
-**Evidence**: [LeRobot ROS 2 RFC #4368](https://github.com/huggingface/lerobot/issues/4368) surveys the fragmentation. None of the 6 bridges installs cleanly against LeRobot 0.6.x.
+**Evidence**: [LeRobot ROS 2 RFC #4368](https://github.com/huggingface/lerobot/issues/4368) surveys the fragmentation. None of the 6 bridges installs cleanly against LeRobot 0.6.x. NVIDIA's `isaac_ros_mcap_lerobot_converter` (released with Isaac ROS Deploy, April 2026) is the seventh independent converter.
 
 **Community status**: **Early-stage effort, no code merged.** RFC #4368 proposes 5 deliverables (bidirectional converter, conventions doc, policy deployment node) but is still at the proposal stage. Intel's Physical AI Studio has an open feature request for rosbag import. RLDS (Google) is still maintained but momentum has shifted to LeRobot — they coexist with no convergence path. [Croissant 1.1](https://arxiv.org/html/2403.19546v1) (MLCommons) has a domain-extension mechanism that could theoretically support robotics-specific dataset semantics, but no robotics extension has been proposed.
 

@@ -402,6 +402,10 @@ Source: [Isaac-GR00T data preparation](https://github.com/NVIDIA/Isaac-GR00T/blo
 
 **None.** The conversion config YAML maps HDF5 field names to LeRobot feature names manually. If field names are wrong, the script fails at runtime. No schema comparison or auto-detection.
 
+### GR00T E2E: second complete workflow with error signatures
+
+The GR00T E2E tutorial documents a second complete workflow (HDF5/MCAP → LeRobot → GR00T checkpoint → LEAPP bundle → Isaac ROS Deploy → real G1) with 5 format boundaries. It includes specific error signatures for mismatches: wrong embodiment at eval produces `ValueError: Invalid action shape, expected: 23, received: 50`; wrong action horizon produces `Action key 'left_arm''s horizon must be 40. Got 50`. These confirm that compatibility failures at format boundaries produce runtime errors with dimensions in the error message but no guidance on *which* configuration is wrong. See [nvidia-e2e-workflow-notes.md](nvidia-e2e-workflow-notes.md) for full analysis.
+
 ---
 
 ## 8. RHOAI Model Registry
