@@ -1,0 +1,55 @@
+/* Physical AI Diagrams — Shared CSS Classes
+   Embedded into each SVG's <style> block by build.py.
+   Edit here, rebuild to propagate. */
+
+/* --- Typography --- */
+.title { font-size: 20px; font-weight: bold; fill: #2c3e50; }
+.subtitle { font-size: 12px; fill: #7f8c8d; }
+.block-name { font-size: 15px; font-weight: bold; fill: #2c3e50; }
+.block-desc { font-size: 10px; fill: #5a6a7a; }
+.block-note { font-size: 9px; fill: #8fa4b8; }
+.data-label { font-size: 9px; font-weight: bold; fill: #3a5068; }
+.data-detail { font-size: 7.5px; fill: #7f8c8d; }
+.arrow-label { font-size: 8px; fill: #5a6a7a; }
+.annotation-title { font-size: 8px; font-weight: bold; fill: #856404; }
+.annotation-text { font-size: 7px; fill: #856404; }
+.gap-text { font-size: 7px; fill: #c0392b; }
+
+/* --- Blocks --- */
+.block { rx: 10; stroke-width: 1.5; }
+.block-emphasis { rx: 10; stroke-width: 2; }
+.block-divider { stroke: #b0bec5; stroke-opacity: 0.5; }
+
+/* --- Data object boxes --- */
+.data-box { fill: #fff; stroke: #c5cdd6; stroke-width: 0.8; rx: 4; }
+
+/* --- Arrows --- */
+.arrow-default { stroke: #5a6a7a; stroke-width: 1.8; fill: none; }
+.arrow-secondary { stroke: #5a6a7a; stroke-width: 1.2; stroke-dasharray: 5,3; fill: none; }
+.arrow-feedback { stroke: #5a6a7a; stroke-width: 1.8; stroke-dasharray: 8,4; fill: none; }
+.arrow-gap { stroke: #c0392b; stroke-width: 2; stroke-dasharray: 6,3; fill: none; }
+.arrow-standard { stroke: #27ae60; stroke-width: 2; fill: none; }
+.arrow-convention { stroke: #e67e22; stroke-width: 2; fill: none; }
+
+/* --- Ecosystem colors (diagram 3) --- */
+.eco-huggingface { stroke: #ff9d00; fill: none; }
+.eco-ros { stroke: #2267a0; fill: none; }
+.eco-nvidia { stroke: #76b900; fill: none; }
+.eco-openpi { stroke: #8b5cf6; fill: none; }
+.eco-redhat { stroke: #ee0000; fill: none; }
+.eco-none { stroke: #95a5a6; fill: none; }
+
+.eco-huggingface-fill { fill: #ff9d00; }
+.eco-ros-fill { fill: #2267a0; }
+.eco-nvidia-fill { fill: #76b900; }
+.eco-openpi-fill { fill: #8b5cf6; }
+.eco-redhat-fill { fill: #ee0000; }
+.eco-none-fill { fill: #95a5a6; }
+
+/* --- Annotation boxes --- */
+.format-box { fill: #fff3cd; stroke: #f39c12; stroke-width: 1; rx: 3; }
+.gap-box { fill: #f8d7da; stroke: #c0392b; stroke-width: 0.5; rx: 2; }
+
+/* --- Legend --- */
+.legend-label { font-size: 10px; fill: #555; }
+.legend-title { font-size: 11px; font-weight: bold; fill: #2c3e50; }

@@ -1,0 +1,411 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 850" font-family="'Helvetica Neue', Arial, sans-serif">
+  <defs>
+<!-- SHARED-DEFS-START -->
+<!-- Shared <defs> block for Physical AI workflow diagrams.
+     Injected by build.py into each SVG's <defs> element. -->
+
+<!-- Arrowhead markers — sized from tokens.yaml -->
+<marker id="arrow" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#5a6a7a"/>
+</marker>
+<marker id="arrow-gap" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#c0392b"/>
+</marker>
+<marker id="arrow-standard" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#27ae60"/>
+</marker>
+<marker id="arrow-convention" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#e67e22"/>
+</marker>
+
+<!-- Ecosystem-colored arrows (diagram 3) -->
+<marker id="arrow-huggingface" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#ff9d00"/>
+</marker>
+<marker id="arrow-ros" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#2267a0"/>
+</marker>
+<marker id="arrow-nvidia" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#76b900"/>
+</marker>
+<marker id="arrow-openpi" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#8b5cf6"/>
+</marker>
+<marker id="arrow-redhat" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#ee0000"/>
+</marker>
+<marker id="arrow-none" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#95a5a6"/>
+</marker>
+
+<!-- Block gradient -->
+<linearGradient id="block-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" style="stop-color:#e8edf2;stop-opacity:1"/>
+  <stop offset="100%" style="stop-color:#d5dce6;stop-opacity:1"/>
+</linearGradient>
+<!-- SHARED-DEFS-END -->
+</defs>
+<!-- SHARED-STYLE-START -->
+<style><![CDATA[
+/* Physical AI Diagrams — Shared CSS Classes
+   Embedded into each SVG's <style> block by build.py.
+   Edit here, rebuild to propagate. */
+
+/* --- Typography --- */
+.title { font-size: 20px; font-weight: bold; fill: #2c3e50; }
+.subtitle { font-size: 12px; fill: #7f8c8d; }
+.block-name { font-size: 15px; font-weight: bold; fill: #2c3e50; }
+.block-desc { font-size: 10px; fill: #5a6a7a; }
+.block-note { font-size: 9px; fill: #8fa4b8; }
+.data-label { font-size: 9px; font-weight: bold; fill: #3a5068; }
+.data-detail { font-size: 7.5px; fill: #7f8c8d; }
+.arrow-label { font-size: 8px; fill: #5a6a7a; }
+.annotation-title { font-size: 8px; font-weight: bold; fill: #856404; }
+.annotation-text { font-size: 7px; fill: #856404; }
+.gap-text { font-size: 7px; fill: #c0392b; }
+
+/* --- Blocks --- */
+.block { rx: 10; stroke-width: 1.5; }
+.block-emphasis { rx: 10; stroke-width: 2; }
+.block-divider { stroke: #b0bec5; stroke-opacity: 0.5; }
+
+/* --- Data object boxes --- */
+.data-box { fill: #fff; stroke: #c5cdd6; stroke-width: 0.8; rx: 4; }
+
+/* --- Arrows --- */
+.arrow-default { stroke: #5a6a7a; stroke-width: 1.8; fill: none; }
+.arrow-secondary { stroke: #5a6a7a; stroke-width: 1.2; stroke-dasharray: 5,3; fill: none; }
+.arrow-feedback { stroke: #5a6a7a; stroke-width: 1.8; stroke-dasharray: 8,4; fill: none; }
+.arrow-gap { stroke: #c0392b; stroke-width: 2; stroke-dasharray: 6,3; fill: none; }
+.arrow-standard { stroke: #27ae60; stroke-width: 2; fill: none; }
+.arrow-convention { stroke: #e67e22; stroke-width: 2; fill: none; }
+
+/* --- Ecosystem colors (diagram 3) --- */
+.eco-huggingface { stroke: #ff9d00; fill: none; }
+.eco-ros { stroke: #2267a0; fill: none; }
+.eco-nvidia { stroke: #76b900; fill: none; }
+.eco-openpi { stroke: #8b5cf6; fill: none; }
+.eco-redhat { stroke: #ee0000; fill: none; }
+.eco-none { stroke: #95a5a6; fill: none; }
+
+.eco-huggingface-fill { fill: #ff9d00; }
+.eco-ros-fill { fill: #2267a0; }
+.eco-nvidia-fill { fill: #76b900; }
+.eco-openpi-fill { fill: #8b5cf6; }
+.eco-redhat-fill { fill: #ee0000; }
+.eco-none-fill { fill: #95a5a6; }
+
+/* --- Annotation boxes --- */
+.format-box { fill: #fff3cd; stroke: #f39c12; stroke-width: 1; rx: 3; }
+.gap-box { fill: #f8d7da; stroke: #c0392b; stroke-width: 0.5; rx: 2; }
+
+/* --- Legend --- */
+.legend-label { font-size: 10px; fill: #555; }
+.legend-title { font-size: 11px; font-weight: bold; fill: #2c3e50; }
+]]></style>
+<!-- SHARED-STYLE-END -->
+
+  <rect width="1500" height="850" fill="#f8f9fb"/>
+
+  <!-- Title -->
+  <text x="750" y="35" text-anchor="middle" font-size="20" font-weight="bold" fill="#2c3e50">Physical AI Training Paradigms</text>
+  <text x="750" y="55" text-anchor="middle" font-size="12" fill="#7f8c8d">Four modes of training / evaluation — each orchestrates the sim stack differently</text>
+
+  <!-- Column headers -->
+  <text x="195" y="85" text-anchor="middle" font-size="15" font-weight="bold" fill="#2c3e50">Fine-Tuning (IL)</text>
+  <text x="195" y="100" text-anchor="middle" font-size="9" fill="#7f8c8d">Supervised, no environment</text>
+
+  <text x="555" y="85" text-anchor="middle" font-size="15" font-weight="bold" fill="#2c3e50">RL Training</text>
+  <text x="555" y="100" text-anchor="middle" font-size="9" fill="#7f8c8d">Closed loop with reward</text>
+
+  <text x="915" y="85" text-anchor="middle" font-size="15" font-weight="bold" fill="#2c3e50">Synth Data Gen</text>
+  <text x="915" y="100" text-anchor="middle" font-size="9" fill="#7f8c8d">Domain randomization</text>
+
+  <text x="1275" y="85" text-anchor="middle" font-size="15" font-weight="bold" fill="#2c3e50">Evaluation</text>
+  <text x="1275" y="100" text-anchor="middle" font-size="9" fill="#7f8c8d">Benchmark scoring</text>
+
+  <!-- Column dividers -->
+  <line x1="375" y1="70" x2="375" y2="780" stroke="#dde3ea" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="735" y1="70" x2="735" y2="780" stroke="#dde3ea" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="1095" y1="70" x2="1095" y2="780" stroke="#dde3ea" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- ============================================ -->
+  <!-- COLUMN 1: Fine-Tuning (IL)                   -->
+  <!-- ============================================ -->
+
+  <!-- Input: Dataset (data object = white fill) -->
+  <g transform="translate(70, 125)">
+    <rect width="120" height="40" rx="8" fill="#fff" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="60" y="18" text-anchor="middle" font-size="10" font-weight="bold" fill="#3a5068">Dataset</text>
+    <text x="60" y="32" text-anchor="middle" font-size="7" fill="#7f8c8d">Episodes + metadata</text>
+  </g>
+
+  <!-- Input: BaseModel (data object = white fill) -->
+  <g transform="translate(210, 125)">
+    <rect width="120" height="40" rx="8" fill="#fff" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="60" y="18" text-anchor="middle" font-size="10" font-weight="bold" fill="#3a5068">BaseModel</text>
+    <text x="60" y="32" text-anchor="middle" font-size="7" fill="#7f8c8d">Pre-trained checkpoint</text>
+  </g>
+
+  <!-- Arrows down -->
+  <line x1="130" y1="165" x2="165" y2="195" stroke="#5a6a7a" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="270" y1="165" x2="225" y2="195" stroke="#5a6a7a" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Training Framework (functional block = gradient fill) -->
+  <g transform="translate(105, 200)">
+    <rect width="180" height="65" rx="10" fill="url(#block-grad)" stroke="#8fa4b8" stroke-width="2"/>
+    <text x="90" y="20" text-anchor="middle" font-size="12" font-weight="bold" fill="#2c3e50">Training Framework</text>
+    <line x1="15" y1="28" x2="165" y2="28" stroke="#b0bec5" stroke-opacity="0.5"/>
+    <text x="90" y="42" text-anchor="middle" font-size="8" fill="#5a6a7a">Loss: behavior cloning</text>
+    <text x="90" y="54" text-anchor="middle" font-size="8" fill="#5a6a7a">(imitation learning)</text>
+  </g>
+
+  <!-- No sim stack for fine-tuning -->
+  <g transform="translate(120, 300)">
+    <rect width="150" height="100" rx="8" fill="#f8f9fb" stroke="#dde3ea" stroke-width="1" stroke-dasharray="6,3"/>
+    <text x="75" y="45" text-anchor="middle" font-size="10" fill="#b0bec5">No simulator</text>
+    <text x="75" y="60" text-anchor="middle" font-size="10" fill="#b0bec5">required</text>
+  </g>
+
+  <!-- Arrow down to output -->
+  <line x1="195" y1="265" x2="195" y2="435" stroke="#5a6a7a" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Output: Checkpoint (data object = white fill) -->
+  <g transform="translate(125, 440)">
+    <rect width="140" height="40" rx="8" fill="#fff" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="70" y="18" text-anchor="middle" font-size="10" font-weight="bold" fill="#3a5068">Checkpoint</text>
+    <text x="70" y="32" text-anchor="middle" font-size="7" fill="#7f8c8d">Fine-tuned weights</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- COLUMN 2: RL Training                        -->
+  <!-- ============================================ -->
+
+  <!-- Input: BaseModel (data object = white fill) -->
+  <g transform="translate(435, 125)">
+    <rect width="105" height="40" rx="8" fill="#fff" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="52" y="18" text-anchor="middle" font-size="10" font-weight="bold" fill="#3a5068">BaseModel</text>
+    <text x="52" y="32" text-anchor="middle" font-size="7" fill="#7f8c8d">Pre-trained ckpt</text>
+  </g>
+  <!-- Input: Reward Fn (data object = white fill) -->
+  <g transform="translate(560, 125)">
+    <rect width="110" height="40" rx="8" fill="#fff" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="55" y="18" text-anchor="middle" font-size="10" font-weight="bold" fill="#3a5068">Reward Fn</text>
+    <text x="55" y="32" text-anchor="middle" font-size="7" fill="#7f8c8d">Objective / scoring</text>
+  </g>
+
+  <!-- Arrows down -->
+  <line x1="488" y1="165" x2="520" y2="195" stroke="#5a6a7a" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="615" y1="165" x2="580" y2="195" stroke="#5a6a7a" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- RL Optimizer (functional block = gradient fill, orange border) -->
+  <g transform="translate(460, 200)">
+    <rect width="190" height="50" rx="10" fill="url(#block-grad)" stroke="#e67e22" stroke-width="2"/>
+    <text x="95" y="20" text-anchor="middle" font-size="12" font-weight="bold" fill="#2c3e50">RL Optimizer</text>
+    <line x1="15" y1="28" x2="175" y2="28" stroke="#b0bec5" stroke-opacity="0.5"/>
+    <text x="95" y="42" text-anchor="middle" font-size="8" fill="#5a6a7a">PPO / SAC / policy gradient</text>
+  </g>
+
+  <!-- RL loop arrows -->
+  <line x1="555" y1="250" x2="555" y2="280" stroke="#e67e22" stroke-width="1.8" marker-end="url(#arrow-convention)"/>
+  <g transform="translate(565, 255)">
+    <text x="0" y="10" font-size="7" fill="#e67e22">weights</text>
+  </g>
+
+  <!-- Sim Stack (container) -->
+  <g transform="translate(430, 285)">
+    <rect width="250" height="155" rx="8" fill="#f0f3f6" stroke="#8fa4b8" stroke-width="1.5"/>
+    <text x="125" y="18" text-anchor="middle" font-size="9" font-weight="bold" fill="#5a6a7a">Sim Stack</text>
+
+    <!-- Sub-blocks inside (all required for RL) -->
+    <g transform="translate(15, 25)">
+      <rect width="220" height="25" rx="4" fill="url(#block-grad)" stroke="#b0bec5" stroke-width="0.8"/>
+      <text x="110" y="17" text-anchor="middle" font-size="8" fill="#5a6a7a">Policy Server + Embodiment Adapter</text>
+    </g>
+    <g transform="translate(15, 55)">
+      <rect width="220" height="25" rx="4" fill="url(#block-grad)" stroke="#b0bec5" stroke-width="0.8"/>
+      <text x="110" y="17" text-anchor="middle" font-size="8" fill="#5a6a7a">Robot Controller</text>
+    </g>
+    <g transform="translate(15, 85)">
+      <rect width="220" height="25" rx="4" fill="url(#block-grad)" stroke="#b0bec5" stroke-width="0.8"/>
+      <text x="110" y="17" text-anchor="middle" font-size="8" fill="#5a6a7a">Simulator (vectorized envs)</text>
+    </g>
+
+    <text x="125" y="125" text-anchor="middle" font-size="7" fill="#8fa4b8">+ EnvironmentDescription</text>
+    <text x="125" y="137" text-anchor="middle" font-size="7" fill="#8fa4b8">+ RobotDescription</text>
+  </g>
+
+  <!-- RL loop return arrow -->
+  <path d="M 680,380 L 710,380 Q 720,380 720,370 L 720,230 Q 720,220 710,220 L 655,220" stroke="#e67e22" stroke-width="1.5" fill="none" marker-end="url(#arrow-convention)" stroke-dasharray="5,3"/>
+  <g transform="translate(698, 300)">
+    <text x="0" y="0" font-size="7" fill="#e67e22" transform="rotate(90)">reward + obs</text>
+  </g>
+
+  <!-- Arrow down to output -->
+  <line x1="555" y1="440" x2="555" y2="470" stroke="#5a6a7a" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Output: Checkpoint (data object = white fill) -->
+  <g transform="translate(485, 475)">
+    <rect width="140" height="40" rx="8" fill="#fff" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="70" y="18" text-anchor="middle" font-size="10" font-weight="bold" fill="#3a5068">Checkpoint</text>
+    <text x="70" y="32" text-anchor="middle" font-size="7" fill="#7f8c8d">RL-trained policy</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- COLUMN 3: Synth Data Gen                     -->
+  <!-- ============================================ -->
+
+  <!-- Input: Env Assets (data object = white fill) -->
+  <g transform="translate(790, 125)">
+    <rect width="110" height="40" rx="8" fill="#fff" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="55" y="18" text-anchor="middle" font-size="10" font-weight="bold" fill="#3a5068">Env Assets</text>
+    <text x="55" y="32" text-anchor="middle" font-size="7" fill="#7f8c8d">Scenes, physics</text>
+  </g>
+  <!-- Input: TaskSpec (data object = white fill) -->
+  <g transform="translate(920, 125)">
+    <rect width="110" height="40" rx="8" fill="#fff" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="55" y="18" text-anchor="middle" font-size="10" font-weight="bold" fill="#3a5068">TaskSpec</text>
+    <text x="55" y="32" text-anchor="middle" font-size="7" fill="#7f8c8d">Instructions, goals</text>
+  </g>
+
+  <!-- Arrows down -->
+  <line x1="845" y1="165" x2="880" y2="195" stroke="#5a6a7a" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="975" y1="165" x2="940" y2="195" stroke="#5a6a7a" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- SDG Orchestrator (functional block = gradient fill) -->
+  <g transform="translate(820, 200)">
+    <rect width="190" height="50" rx="10" fill="url(#block-grad)" stroke="#8fa4b8" stroke-width="2"/>
+    <text x="95" y="20" text-anchor="middle" font-size="12" font-weight="bold" fill="#2c3e50">SDG Orchestrator</text>
+    <line x1="15" y1="28" x2="175" y2="28" stroke="#b0bec5" stroke-opacity="0.5"/>
+    <text x="95" y="42" text-anchor="middle" font-size="8" fill="#5a6a7a">Env randomization + batch runs</text>
+  </g>
+
+  <!-- Arrow down -->
+  <line x1="915" y1="250" x2="915" y2="280" stroke="#5a6a7a" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <g transform="translate(925, 255)">
+    <text x="0" y="10" font-size="7" fill="#5a6a7a">rand. envs</text>
+  </g>
+
+  <!-- Sim Stack (container) -->
+  <g transform="translate(790, 285)">
+    <rect width="250" height="155" rx="8" fill="#f0f3f6" stroke="#8fa4b8" stroke-width="1.5"/>
+    <text x="125" y="18" text-anchor="middle" font-size="9" font-weight="bold" fill="#5a6a7a">Sim Stack</text>
+
+    <g transform="translate(15, 25)">
+      <rect width="220" height="25" rx="4" fill="url(#block-grad)" stroke="#b0bec5" stroke-width="0.8" stroke-dasharray="3,2"/>
+      <text x="110" y="17" text-anchor="middle" font-size="8" fill="#5a6a7a">Policy Server + Embodiment Adapter</text>
+    </g>
+    <g transform="translate(15, 55)">
+      <rect width="220" height="25" rx="4" fill="url(#block-grad)" stroke="#b0bec5" stroke-width="0.8" stroke-dasharray="3,2"/>
+      <text x="110" y="17" text-anchor="middle" font-size="8" fill="#5a6a7a">Robot Controller</text>
+    </g>
+    <g transform="translate(15, 85)">
+      <rect width="220" height="25" rx="4" fill="url(#block-grad)" stroke="#b0bec5" stroke-width="0.8"/>
+      <text x="110" y="17" text-anchor="middle" font-size="8" fill="#5a6a7a">Simulator</text>
+    </g>
+
+    <text x="125" y="125" text-anchor="middle" font-size="7" fill="#8fa4b8">+ EnvironmentDescription</text>
+    <text x="125" y="137" text-anchor="middle" font-size="7" fill="#8fa4b8">+ RobotDescription</text>
+  </g>
+
+  <!-- Arrow down to output -->
+  <line x1="915" y1="440" x2="915" y2="470" stroke="#5a6a7a" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Output: Episodes (data object = white fill) -->
+  <g transform="translate(845, 475)">
+    <rect width="140" height="40" rx="8" fill="#fff" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="70" y="18" text-anchor="middle" font-size="10" font-weight="bold" fill="#3a5068">Episodes</text>
+    <text x="70" y="32" text-anchor="middle" font-size="7" fill="#7f8c8d">→ Dataset Store</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- COLUMN 4: Evaluation                         -->
+  <!-- ============================================ -->
+
+  <!-- Input: Checkpoint (data object = white fill) -->
+  <g transform="translate(1150, 125)">
+    <rect width="110" height="40" rx="8" fill="#fff" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="55" y="18" text-anchor="middle" font-size="10" font-weight="bold" fill="#3a5068">Checkpoint</text>
+    <text x="55" y="32" text-anchor="middle" font-size="7" fill="#7f8c8d">Model to evaluate</text>
+  </g>
+  <!-- Input: BenchmarkSpec (data object = white fill) -->
+  <g transform="translate(1280, 125)">
+    <rect width="110" height="40" rx="8" fill="#fff" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="55" y="18" text-anchor="middle" font-size="10" font-weight="bold" fill="#3a5068">BenchmarkSpec</text>
+    <text x="55" y="32" text-anchor="middle" font-size="7" fill="#7f8c8d">Tasks, success criteria</text>
+  </g>
+
+  <!-- Arrows down -->
+  <line x1="1205" y1="165" x2="1240" y2="195" stroke="#5a6a7a" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="1335" y1="165" x2="1300" y2="195" stroke="#5a6a7a" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Eval Framework (functional block = gradient fill) -->
+  <g transform="translate(1180, 200)">
+    <rect width="190" height="50" rx="10" fill="url(#block-grad)" stroke="#8fa4b8" stroke-width="2"/>
+    <text x="95" y="20" text-anchor="middle" font-size="12" font-weight="bold" fill="#2c3e50">Eval Framework</text>
+    <line x1="15" y1="28" x2="175" y2="28" stroke="#b0bec5" stroke-opacity="0.5"/>
+    <text x="95" y="42" text-anchor="middle" font-size="8" fill="#5a6a7a">Task execution + metric collection</text>
+  </g>
+
+  <!-- Arrow down -->
+  <line x1="1275" y1="250" x2="1275" y2="280" stroke="#5a6a7a" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Sim Stack (container) -->
+  <g transform="translate(1150, 285)">
+    <rect width="250" height="155" rx="8" fill="#f0f3f6" stroke="#8fa4b8" stroke-width="1.5"/>
+    <text x="125" y="18" text-anchor="middle" font-size="9" font-weight="bold" fill="#5a6a7a">Sim Stack</text>
+
+    <!-- All required for Eval -->
+    <g transform="translate(15, 25)">
+      <rect width="220" height="25" rx="4" fill="url(#block-grad)" stroke="#b0bec5" stroke-width="0.8"/>
+      <text x="110" y="17" text-anchor="middle" font-size="8" fill="#5a6a7a">Policy Server + Embodiment Adapter</text>
+    </g>
+    <g transform="translate(15, 55)">
+      <rect width="220" height="25" rx="4" fill="url(#block-grad)" stroke="#b0bec5" stroke-width="0.8"/>
+      <text x="110" y="17" text-anchor="middle" font-size="8" fill="#5a6a7a">Robot Controller</text>
+    </g>
+    <g transform="translate(15, 85)">
+      <rect width="220" height="25" rx="4" fill="url(#block-grad)" stroke="#b0bec5" stroke-width="0.8"/>
+      <text x="110" y="17" text-anchor="middle" font-size="8" fill="#5a6a7a">Simulator (benchmark env)</text>
+    </g>
+
+    <text x="125" y="125" text-anchor="middle" font-size="7" fill="#8fa4b8">+ EnvironmentDescription</text>
+    <text x="125" y="137" text-anchor="middle" font-size="7" fill="#8fa4b8">+ RobotDescription</text>
+  </g>
+
+  <!-- Arrow down to output -->
+  <line x1="1275" y1="440" x2="1275" y2="470" stroke="#5a6a7a" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Output: EvalResults (data object = white fill) -->
+  <g transform="translate(1205, 475)">
+    <rect width="140" height="40" rx="8" fill="#fff" stroke="#c5cdd6" stroke-width="1"/>
+    <text x="70" y="18" text-anchor="middle" font-size="10" font-weight="bold" fill="#3a5068">EvalResults</text>
+    <text x="70" y="32" text-anchor="middle" font-size="7" fill="#7f8c8d">Success rate, metrics</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- Bottom: Key observations                     -->
+  <!-- ============================================ -->
+
+  <g transform="translate(60, 560)">
+    <rect width="1380" height="55" rx="6" fill="#eaf7ea" stroke="#27ae60" stroke-width="1"/>
+    <text x="15" y="18" font-size="10" font-weight="bold" fill="#27ae60">Shared Sim Stack</text>
+    <text x="15" y="35" font-size="8.5" fill="#2c3e50">RL, SDG, and Eval all orchestrate the same logical sim stack (Policy Server → Embodiment Adapter → Robot Controller → Simulator).</text>
+    <text x="15" y="48" font-size="8.5" fill="#2c3e50">The semantic metadata gaps (ActionSemantics, ObsSemantics, EmbodimentMapping) affect all three modes — fixing them once benefits the entire workflow.</text>
+  </g>
+
+  <g transform="translate(60, 630)">
+    <rect width="1380" height="55" rx="6" fill="#fdf2f2" stroke="#c0392b" stroke-width="1"/>
+    <text x="15" y="18" font-size="10" font-weight="bold" fill="#c0392b">Key Differences</text>
+    <text x="15" y="35" font-size="8.5" fill="#2c3e50">Fine-Tuning: pipeline (no live env). RL: closed loop (reward drives weight updates each step). SDG: batch orchestration (env randomization, no weight updates). Eval: read-only (no weight updates, measures performance).</text>
+    <text x="15" y="48" font-size="8.5" fill="#2c3e50">Deployment: RL often fuses optimizer + policy + sim into one GPU process (vectorized envs). Fine-tuning, SDG, and Eval typically use separate processes.</text>
+  </g>
+
+  <g transform="translate(60, 700)">
+    <rect width="1380" height="55" rx="6" fill="#fff8ee" stroke="#e67e22" stroke-width="1"/>
+    <text x="15" y="18" font-size="10" font-weight="bold" fill="#e67e22">Data Objects at Boundaries</text>
+    <text x="15" y="35" font-size="8.5" fill="#2c3e50">Inputs: Dataset (IL), BaseModel (IL+RL), Reward Function (RL), Env Assets + TaskSpec (SDG+Eval), Checkpoint (Eval), BenchmarkSpec (Eval)</text>
+    <text x="15" y="48" font-size="8.5" fill="#2c3e50">Outputs: Checkpoint with ActionSemantics + ObsSemantics (IL+RL), Episodes with ActionSemantics + ObsSemantics (SDG), EvalResults (Eval)</text>
+  </g>
+
+</svg>

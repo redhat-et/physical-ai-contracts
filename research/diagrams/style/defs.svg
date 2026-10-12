@@ -1,0 +1,42 @@
+<!-- Shared <defs> block for Physical AI workflow diagrams.
+     Injected by build.py into each SVG's <defs> element. -->
+
+<!-- Arrowhead markers — sized from tokens.yaml -->
+<marker id="arrow" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#5a6a7a"/>
+</marker>
+<marker id="arrow-gap" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#c0392b"/>
+</marker>
+<marker id="arrow-standard" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#27ae60"/>
+</marker>
+<marker id="arrow-convention" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#e67e22"/>
+</marker>
+
+<!-- Ecosystem-colored arrows (diagram 3) -->
+<marker id="arrow-huggingface" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#ff9d00"/>
+</marker>
+<marker id="arrow-ros" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#2267a0"/>
+</marker>
+<marker id="arrow-nvidia" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#76b900"/>
+</marker>
+<marker id="arrow-openpi" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#8b5cf6"/>
+</marker>
+<marker id="arrow-redhat" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#ee0000"/>
+</marker>
+<marker id="arrow-none" markerWidth="8" markerHeight="5.6" refX="7.2" refY="2.8" orient="auto">
+  <polygon points="0 0, 8 2.8, 0 5.6" fill="#95a5a6"/>
+</marker>
+
+<!-- Block gradient -->
+<linearGradient id="block-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+  <stop offset="0%" style="stop-color:#e8edf2;stop-opacity:1"/>
+  <stop offset="100%" style="stop-color:#d5dce6;stop-opacity:1"/>
+</linearGradient>
